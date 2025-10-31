@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "652198677189",
+    "project_id": "dreammap-e2b53",
+    "storage_bucket": "dreammap-e2b53.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:652198677189:android:510395f1c02ba29e5cfeac",
+        "android_client_info": {
+          "package_name": "com.dreammap.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6kvqN_STQbN9alGb16y8dyOwOoMpGwdw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
