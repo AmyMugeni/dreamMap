@@ -41,12 +41,29 @@ android {
 }
 
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-database")
-    implementation("com.google.firebase:firebase-storage")
+    // 1. Firebase Bill of Materials (BOM) for version management
+    // The version number needs to be a standard string.
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0")) // Using a stable version for example
 
+    // 2. Recommended Firebase KTX dependencies (Coroutines-friendly)
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // 3. Kotlin Coroutines and Play Services Task Awaiter
+    // Note: The KTX libraries usually cover the await functionality,
+    // but including this explicitly is fine for clarity.
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    // Use the explicit Play Services Coroutines library if needed for Tasks
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+    // You must remove the duplicate line that uses 'libs.kotlinx.coroutines.play.services'
+    // unless you are managing the version in the libs.versions.toml file.
+    // Assuming you want the explicit version, the line below is redundant:
+    // implementation(libs.kotlinx.coroutines.play.services)
+
+    // --- Standard Androidx and Compose dependencies ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -55,6 +72,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // --- Testing dependencies ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

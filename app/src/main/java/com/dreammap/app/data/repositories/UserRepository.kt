@@ -1,7 +1,9 @@
 package com.dreammap.app.data.repositories
 
 import com.dreammap.app.data.model.User
-import com.dreammap.app.util.constants.FirestoreConstants
+import com.dreammap.app.util.constants.FirebaseConstants
+import com.google.firebase.Timestamp
+import kotlinx.coroutines.channels.awaitClose
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -9,7 +11,7 @@ class UserRepository(
     // Inject or initialize FirebaseFirestore instance
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-    private val usersCollection = firestore.collection(FirestoreConstants.USERS_COLLECTION)
+    private val usersCollection = firestore.collection(FirebaseConstants.USERS_COLLECTION)
 
     /**
      * Creates a new user profile document immediately after Firebase Auth registration.
@@ -44,8 +46,8 @@ class UserRepository(
     suspend fun getAvailableMentors(): List<User> {
         return try {
             val snapshot = usersCollection
-                .whereEqualTo(FirestoreConstants.FIELD_ROLE, FirestoreConstants.ROLE_MENTOR)
-                .whereEqualTo(FirestoreConstants.FIELD_IS_AVAILABLE, true)
+                .whereEqualTo(FirebaseConstants.FIELD_ROLE, FirebaseConstants.ROLE_MENTOR)
+                .whereEqualTo(FirebaseConstants.FIELD_IS_AVAILABLE, true)
                 .get().await()
 
             snapshot.toObjects(User::class.java)

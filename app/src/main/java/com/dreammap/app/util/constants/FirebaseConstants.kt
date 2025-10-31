@@ -1,6 +1,6 @@
 package com.dreammap.app.util.constants
 
-object FirestoreConstants {
+object FirebaseConstants {
 
     // --- 1. Top-Level Collections ---
 

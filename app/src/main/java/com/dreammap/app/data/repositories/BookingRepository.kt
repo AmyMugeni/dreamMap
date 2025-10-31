@@ -1,7 +1,7 @@
 package com.dreammap.app.data.repositories
 
 import com.dreammap.app.data.model.Booking
-import com.dreammap.app.util.constants.FirestoreConstants
+import com.dreammap.app.util.constants.FirebaseConstants
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
@@ -9,7 +9,7 @@ import kotlinx.coroutines.tasks.await
 class BookingRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-    private val bookingsCollection = firestore.collection(FirestoreConstants.BOOKINGS_COLLECTION)
+    private val bookingsCollection = firestore.collection(FirebaseConstants.BOOKINGS_COLLECTION)
 
     /**
      * Creates a new booking document when a student schedules a session.
@@ -25,12 +25,12 @@ class BookingRepository(
      */
     suspend fun getUserBookings(userId: String): List<Booking> {
         val studentQuery = bookingsCollection
-            .whereEqualTo(FirestoreConstants.FIELD_STUDENT_ID, userId)
-            .orderBy(FirestoreConstants.FIELD_DATE_TIME, Query.Direction.ASCENDING) // Order by date
+            .whereEqualTo(FirebaseConstants.FIELD_STUDENT_ID, userId)
+            .orderBy(FirebaseConstants.FIELD_DATE_TIME, Query.Direction.ASCENDING) // Order by date
 
         val mentorQuery = bookingsCollection
-            .whereEqualTo(FirestoreConstants.FIELD_MENTOR_ID, userId)
-            .orderBy(FirestoreConstants.FIELD_DATE_TIME, Query.Direction.ASCENDING) // Order by date
+            .whereEqualTo(FirebaseConstants.FIELD_MENTOR_ID, userId)
+            .orderBy(FirebaseConstants.FIELD_DATE_TIME, Query.Direction.ASCENDING) // Order by date
 
         // NOTE: Firestore does not support OR queries across different fields in a single call.
         // You must fetch two separate lists and merge them, or only display based on one role.
@@ -51,7 +51,7 @@ class BookingRepository(
      */
     suspend fun updateBookingStatus(bookingId: String, newStatus: String) {
         bookingsCollection.document(bookingId)
-            .update(FirestoreConstants.FIELD_STATUS, newStatus)
+            .update(FirebaseConstants.FIELD_STATUS, newStatus)
             .await()
     }
 }

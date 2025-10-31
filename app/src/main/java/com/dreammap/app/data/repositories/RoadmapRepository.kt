@@ -1,14 +1,14 @@
 package com.dreammap.app.data.repositories
 
 import com.dreammap.app.data.model.Roadmap
-import com.dreammap.app.util.constants.FirestoreConstants
+import com.dreammap.app.util.constants.FirebaseConstants
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 class RoadmapRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-    private val roadmapsCollection = firestore.collection(FirestoreConstants.ROADMAPS_COLLECTION)
+    private val roadmapsCollection = firestore.collection(FirebaseConstants.ROADMAPS_COLLECTION)
 
     // 1. Function to fetch all Roadmaps for the List Screen
     suspend fun getAllRoadmaps(): List<Roadmap> {
