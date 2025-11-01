@@ -56,4 +56,24 @@ class AuthRepository(
     fun signOut() {
         auth.signOut()
     }
+    // In AuthRepository.kt
+
+    // 4. Function to check for the currently signed-in Firebase Auth user
+    fun getCurrentFirebaseUser(): com.google.firebase.auth.FirebaseUser? {
+        return auth.currentUser
+    }
+
+    // 5. Function to fetch profile data, used during the initial load
+    suspend fun getProfileByUid(uid: String): Result<User> {
+        return try {
+            val userProfile = userRepository.getUser(uid)
+            if (userProfile != null) {
+                Result.success(userProfile)
+            } else {
+                Result.failure(Exception("User profile not found in database."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
