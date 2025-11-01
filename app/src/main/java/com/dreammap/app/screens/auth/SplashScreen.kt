@@ -18,55 +18,29 @@ import androidx.navigation.NavHostController
 import com.dreammap.app.Screen // Import your navigation routes
 import com.dreammap.app.ui.theme.IdeaYellow // Import the accent color
 
+// ✅ The SplashScreen is now a simple, clean UI component.
 @Composable
 fun SplashScreen(
+    // ADD THESE TWO PARAMETERS BACK:
     navController: NavHostController,
-    // Get the shared ViewModel instance from the NavHost scope
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel
+
+
 ) {
-    // Collect the states we need to decide navigation
     val user by authViewModel.currentUser.collectAsState()
     val isLoading by authViewModel.isLoading.collectAsState()
-
-    // --- Navigation Logic ---
-    LaunchedEffect(user, isLoading) {
-        // This LaunchedEffect runs whenever 'user' or 'isLoading' changes.
-
-        // We only navigate AFTER the initial check is complete (isLoading == false)
-        if (!isLoading) {
-            val destination = when {
-                user == null -> Screen.AuthGraph.route // Logged out -> Auth Flow
-                user?.role == "admin" -> Screen.AdminDashboard.route // Admin -> Admin Dash
-                else -> Screen.HomeGraph.route // Student/Mentor -> Main App
-            }
-
-            // Navigate and remove the entire backstack beneath the new destination (inclusive = true)
-            // This prevents the user from navigating back to the splash screen.
-            navController.navigate(destination) {
-                popUpTo(Screen.Splash.route) { inclusive = true }
-            }
-        }
-    }
-
     // --- UI Structure (The "Seeds of Dreams" Look) ---
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // Use the NavyBlue from your custom theme defined in MainActivity
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        // Placeholder for the Animated Logo
         Text(
             text = "DreamMap",
-            color = MaterialTheme.colorScheme.onBackground, // Should be white/light color on navy
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 48.sp,
             fontWeight = FontWeight.ExtraBold
         )
-
-        // You would replace this Text composable with your actual animation,
-        // likely involving Lottie or a complex Compose animation,
-        // using IdeaYellow and LightCyan as highlights.
-        //
     }
 }

@@ -12,46 +12,46 @@ class AuthViewModel(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    // 1. User State: Holds the currently logged-in User object or null.
+    // 1. User State
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser
 
-    // 2. Loading State: Indicates if an authentication operation is in progress.
-    private val _isLoading = MutableStateFlow(false)
+    // 2. Loading State: CRITICAL FIX - Starts TRUE to hold the SplashScreen until check is done.
+    private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    // 3. Error State: Displays any authentication errors to the user.
+    // 3. Error State
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
     init {
-        // Check for an existing session when the ViewModel is created
+        // Start the initial authentication check immediately
         handleInitialAuthCheck()
     }
 
     // --- Core State Management Functions ---
 
-    private fun handleInitialAuthCheck() {
-        // If a Firebase Auth user exists, fetch their profile from Firestore
-        val authUser = authRepository.getCurrentFirebaseUser()
-        if (authUser != null) {
-            fetchUserProfile(authUser.uid)
-        }
-    }
-
-    private fun fetchUserProfile(uid: String) = viewModelScope.launch {
+    private fun handleInitialAuthCheck() = viewModelScope.launch {
+        // Ensure loading is set at the start
         _isLoading.value = true
         _errorMessage.value = null
 
-        // This uses the function we added to AuthRepository
-        val result = authRepository.getProfileByUid(uid)
+        val authUser = authRepository.getCurrentFirebaseUser()
 
-        result.onSuccess { user ->
-            _currentUser.value = user
-        }.onFailure { e ->
-            _errorMessage.value = "Failed to load user profile: ${e.message}"
-            authRepository.signOut()
+        if (authUser != null) {
+            // If a Firebase Auth user exists, fetch their profile from Firestore
+            val result = authRepository.getProfileByUid(authUser.uid)
+
+            result.onSuccess { user ->
+                _currentUser.value = user
+            }.onFailure { e ->
+                _errorMessage.value = "Failed to load user profile: ${e.message}"
+                // Sign out if profile loading fails, forcing user to re-authenticate
+                authRepository.signOut()
+            }
         }
+
+        // CRITICAL FIX: Set loading to FALSE once the entire asynchronous check is complete.
         _isLoading.value = false
     }
 
@@ -87,6 +87,13 @@ class AuthViewModel(
             _errorMessage.value = e.message ?: "Login failed. Check credentials."
         }
         _isLoading.value = false
+    }
+
+    /**
+     * Clears error message after it has been displayed.
+     */
+    fun clearError() {
+        _errorMessage.value = null
     }
 
     /**

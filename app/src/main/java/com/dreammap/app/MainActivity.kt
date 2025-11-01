@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -27,9 +28,7 @@ import com.dreammap.app.screens.auth.LoginScreen
 import com.dreammap.app.screens.auth.SplashScreen
 import com.dreammap.app.ui.theme.DreamMapTheme
 
-// --- 1. VIEWMODEL FACTORY (For Dependency Injection) ---
-
-// NOTE: This factory is a basic way to inject the repository dependency into the ViewModel.
+// --- 1. VIEWMODEL FACTORY ---
 class DreamMapViewModelFactory(private val authRepository: AuthRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
@@ -41,23 +40,17 @@ class DreamMapViewModelFactory(private val authRepository: AuthRepository) : Vie
 }
 
 // --- 2. MAIN ACTIVITY ---
-
 class MainActivity : ComponentActivity() {
 
-    // Initialize Repositories (Will be provided to the ViewModel Factory)
     private lateinit var authRepository: AuthRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize repositories. Replace with Hilt/Koin for better structure later.
         val userRepository = UserRepository()
         authRepository = AuthRepository(userRepository = userRepository)
 
         setContent {
-            // Apply the custom theme
             DreamMapTheme {
-                // Pass the AuthViewModel factory to the root composable
                 DreamMapNavRoot(
                     authViewModel = viewModel(
                         factory = DreamMapViewModelFactory(authRepository)
@@ -69,16 +62,16 @@ class MainActivity : ComponentActivity() {
 }
 
 // --- 3. TOP-LEVEL NAVIGATION ROOT ---
-
 @Composable
 fun DreamMapNavRoot(authViewModel: AuthViewModel) {
-    // Collect the user state and loading state
+    // Collect the user state and loading state to drive navigation
     val user by authViewModel.currentUser.collectAsState()
     val isLoading by authViewModel.isLoading.collectAsState()
 
     val navController = rememberNavController()
 
-    // Determine the Start Destination based on authentication status
+    // **CRITICAL LOGIC:** Determine the true starting point based on authentication state.
+    // This is the source of truth for routing and resolves the "direct child" errors.
     val startDestination = remember(user, isLoading) {
         when {
             isLoading -> Screen.Splash.route
@@ -88,21 +81,20 @@ fun DreamMapNavRoot(authViewModel: AuthViewModel) {
         }
     }
 
-    // NavHost: The root of the navigation structure
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
-        // 1. Splash Screen
+        // 1. Splash Screen (No navigation logic inside)
         composable(Screen.Splash.route) {
-            SplashScreen(navController)
+            SplashScreen(navController, authViewModel)
         }
 
         // 2. Authentication Flow Graph
-        authNavGraph(navController)
+        authNavGraph(navController, authViewModel)
 
-        // 3. Main App Flow Graph
-        homeNavGraph(navController)
+        // 3. Main App Flow Graph (ViewModel passed for Profile/Logout)
+        homeNavGraph(navController, authViewModel)
 
         // 4. Admin Dashboard
         composable(Screen.AdminDashboard.route) {
@@ -112,38 +104,43 @@ fun DreamMapNavRoot(authViewModel: AuthViewModel) {
 }
 
 // --- 4. NESTED AUTHENTICATION GRAPH DEFINITION ---
-
-fun NavGraphBuilder.authNavGraph(navController: NavHostController) {
+fun NavGraphBuilder.authNavGraph(
+    navController: NavHostController,
+    authViewModel: AuthViewModel
+) {
     navigation(
         startDestination = Screen.AuthGraph.RoleSelection.route,
         route = Screen.AuthGraph.route
     ) {
+        // Role Selection Screen
         composable(Screen.AuthGraph.RoleSelection.route) {
-            RoleSelectionScreen(navController)
+            RoleSelectionScreen(navController, authViewModel)
         }
 
-        // CORRECTED ROUTE: Defines the argument needed for the Sign-Up screen
+        // Sign Up Screen (Route with Role Argument)
         composable(
             route = Screen.AuthGraph.SignUp.route + "/{role}",
             arguments = listOf(navArgument("role") { type = NavType.StringType })
         ) { backStackEntry ->
-            // Passes the extracted role argument to the Sign-Up Composable
             SignUpScreen(
                 navController = navController,
+                authViewModel = authViewModel,
                 role = backStackEntry.arguments?.getString("role")
             )
         }
 
         // Login Screen
         composable(Screen.AuthGraph.Login.route) {
-            LoginScreen(navController)
+            LoginScreen(navController, authViewModel)
         }
     }
 }
 
 // --- 5. NESTED HOME (MAIN APP) GRAPH DEFINITION ---
-
-fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
+fun NavGraphBuilder.homeNavGraph(
+    navController: NavHostController,
+    authViewModel: AuthViewModel
+) {
     navigation(
         startDestination = Screen.HomeGraph.Dashboard.route,
         route = Screen.HomeGraph.route
@@ -152,7 +149,7 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
         composable(Screen.HomeGraph.Dashboard.route) { /* Dashboard UI */ }
         composable(Screen.HomeGraph.Roadmaps.route) { /* Roadmap List UI */ }
         composable(Screen.HomeGraph.Mentors.route) { /* Mentor Directory UI */ }
-        composable(Screen.HomeGraph.Profile.route) { /* Profile Edit/View UI */ }
+        composable(Screen.HomeGraph.Profile.route) { /* Profile UI */ }
 
         // Detail Screens
         composable(Screen.HomeGraph.RoadmapDetail.route) { /* Roadmap Detail UI */ }
@@ -161,6 +158,7 @@ fun NavGraphBuilder.homeNavGraph(navController: NavHostController) {
 }
 
 // --- 6. PLACEHOLDER UI FUNCTIONS ---
-// (These need to be implemented in their own files, but are here for compilation)
-
 @Composable fun AdminDashboardScreen() { /* UI */ }
+@Composable fun RoleSelectionScreen(navController: NavHostController, authViewModel: AuthViewModel) { /* UI */ }
+// NOTE: SplashScreen, SignUpScreen, and LoginScreen must also have correct signatures
+// and be defined as top-level functions in their respective files.
