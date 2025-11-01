@@ -17,9 +17,9 @@ import com.dreammap.app.Screen // Import your navigation routes
 @Composable
 fun SignUpScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel = viewModel(),
-    // The role is passed as a Nav Argument from RoleSelectionScreen
-    role: String? = navController.currentBackStackEntry?.arguments?.getString("role")
+    // NO default value; it must be passed in
+    authViewModel: AuthViewModel,
+    role: String?
 ) {
     // Input States
     var name by remember { mutableStateOf("") }

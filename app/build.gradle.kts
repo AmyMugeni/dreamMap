@@ -58,6 +58,9 @@ dependencies {
     // Use the explicit Play Services Coroutines library if needed for Tasks
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
+    implementation("androidx.navigation:navigation-compose:2.8.3")
+    implementation("androidx.compose.material:material-icons-extended")
+
     // You must remove the duplicate line that uses 'libs.kotlinx.coroutines.play.services'
     // unless you are managing the version in the libs.versions.toml file.
     // Assuming you want the explicit version, the line below is redundant:

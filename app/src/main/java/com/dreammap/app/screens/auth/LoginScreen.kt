@@ -17,7 +17,8 @@ import com.dreammap.app.Screen // Import your navigation routes
 @Composable
 fun LoginScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel = viewModel() // Gets the shared ViewModel instance
+    // NO default value; it must be passed in
+    authViewModel: AuthViewModel
 ) {
     // Input States
     var email by remember { mutableStateOf("") }
