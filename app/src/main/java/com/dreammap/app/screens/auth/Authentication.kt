@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dreammap.app.data.model.User
 import com.dreammap.app.data.repositories.AuthRepository
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
@@ -16,13 +20,24 @@ class AuthViewModel(
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser
 
-    // 2. Loading State: CRITICAL FIX - Starts TRUE to hold the SplashScreen until check is done.
+    // 2. Loading State
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading
 
     // 3. Error State
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
+
+    // 4. One-time event for successful registration
+    private val _registrationSuccess = Channel<Unit>(Channel.BUFFERED)
+    val registrationSuccess: SharedFlow<Unit> = _registrationSuccess.receiveAsFlow()
+        .shareIn(viewModelScope, started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed())
+
+    // 5. One-time event for successful login
+    private val _loginSuccess = Channel<Unit>(Channel.BUFFERED)
+    val loginSuccess: SharedFlow<Unit> = _loginSuccess.receiveAsFlow()
+        .shareIn(viewModelScope, started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed())
+
 
     init {
         // Start the initial authentication check immediately
@@ -66,6 +81,7 @@ class AuthViewModel(
 
         result.onSuccess { user ->
             _currentUser.value = user
+            _registrationSuccess.send(Unit) // EMIT EVENT
         }.onFailure { e ->
             _errorMessage.value = e.message ?: "Registration failed."
         }
@@ -83,6 +99,7 @@ class AuthViewModel(
 
         result.onSuccess { user ->
             _currentUser.value = user
+            _loginSuccess.send(Unit) // EMIT EVENT
         }.onFailure { e ->
             _errorMessage.value = e.message ?: "Login failed. Check credentials."
         }

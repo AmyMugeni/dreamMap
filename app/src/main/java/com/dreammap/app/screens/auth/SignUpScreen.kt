@@ -1,6 +1,12 @@
 package com.dreammap.app.screens.auth
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -8,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.dreammap.app.Screen // Import your navigation routes
 
@@ -17,7 +22,6 @@ import com.dreammap.app.Screen // Import your navigation routes
 @Composable
 fun SignUpScreen(
     navController: NavHostController,
-    // NO default value; it must be passed in
     authViewModel: AuthViewModel,
     role: String?
 ) {
@@ -29,14 +33,12 @@ fun SignUpScreen(
     // ViewModel States
     val isLoading by authViewModel.isLoading.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()
-    val user by authViewModel.currentUser.collectAsState()
 
     // --- Side Effects and Navigation ---
 
-    // 1. Navigate on successful sign-up
-    LaunchedEffect(user) {
-        if (user != null) {
-            // Success! The AuthViewModel has already resolved the user's role.
+    // 1. Navigate on successful sign-up (Event-driven)
+    LaunchedEffect(Unit) {
+        authViewModel.registrationSuccess.collect {
             navController.navigate(Screen.HomeGraph.route) {
                 // Clear the Auth stack
                 popUpTo(Screen.AuthGraph.route) { inclusive = true }
@@ -49,6 +51,7 @@ fun SignUpScreen(
         if (errorMessage != null) {
             // In a real app, you'd show a Snackbar here
             println("Sign-up Error: $errorMessage")
+            authViewModel.clearError() // Also clear the error after showing it
         }
     }
 
@@ -99,7 +102,6 @@ fun SignUpScreen(
                 onValueChange = { password = it },
                 label = { Text("Password (6+ characters)") },
                 modifier = Modifier.fillMaxWidth()
-                // keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password) // Add this later
             )
             Spacer(modifier = Modifier.height(32.dp))
 

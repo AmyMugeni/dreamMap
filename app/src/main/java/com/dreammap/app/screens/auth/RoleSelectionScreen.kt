@@ -35,7 +35,7 @@ fun RoleSelectionScreen(
             Button(
                 onClick = {
                     // Navigate to the Sign-up screen, ready for student registration
-                    navController.navigate(Screen.AuthGraph.SignUp.route + "/student")
+                    navController.navigate(Screen.AuthGraph.SignUp.createRoute("student"))
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -50,7 +50,7 @@ fun RoleSelectionScreen(
             Button(
                 onClick = {
                     // Navigate to the Sign-up screen, ready for mentor registration
-                    navController.navigate(Screen.AuthGraph.SignUp.route + "/mentor")
+                    navController.navigate(Screen.AuthGraph.SignUp.createRoute("mentor"))
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -66,7 +66,7 @@ fun RoleSelectionScreen(
                 onClick = {
                     navController.navigate(Screen.AuthGraph.Login.route) {
                         // Pop role selection screen off the stack when going to login
-                        popUpTo(Screen.AuthGraph.RoleSelection.route) { inclusive = true }
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
                     }
                 },
             ) {

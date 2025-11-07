@@ -14,6 +14,8 @@ class AuthRepository(
     // 1. Function to create a new user account via email/password
     suspend fun registerUser(email: String, password: String, role: String, name: String): Result<User> {
         return try {
+            println("DEBUG: FirebaseAuth instance = $auth")
+            println("DEBUG: Firebase initialized: ${auth.app.name}")
             // AUTH STEP: Create user in Firebase Authentication
             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
             val firebaseUser = authResult.user ?: throw Exception("Auth user creation failed.")

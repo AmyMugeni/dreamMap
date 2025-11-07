@@ -15,7 +15,9 @@ sealed class Screen(val route: String) {
     object AuthGraph : Screen("auth_graph") {
         // Nested destinations within the Auth Graph
         object RoleSelection : Screen("auth/role_select")
-        object SignUp : Screen("auth/signup")
+        object SignUp : Screen("auth/signup/{role}") {
+            fun createRoute(role: String) = "auth/signup/$role"
+        }
         object Login : Screen("auth/login")
     }
 

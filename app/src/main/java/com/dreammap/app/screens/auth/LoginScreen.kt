@@ -9,7 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.dreammap.app.Screen // Import your navigation routes
 
@@ -17,7 +16,6 @@ import com.dreammap.app.Screen // Import your navigation routes
 @Composable
 fun LoginScreen(
     navController: NavHostController,
-    // NO default value; it must be passed in
     authViewModel: AuthViewModel
 ) {
     // Input States
@@ -27,13 +25,12 @@ fun LoginScreen(
     // ViewModel States
     val isLoading by authViewModel.isLoading.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()
-    val user by authViewModel.currentUser.collectAsState()
 
     // --- Side Effects and Navigation ---
 
-    // 1. Navigate on successful login
-    LaunchedEffect(user) {
-        if (user != null) {
+    // 1. Navigate on successful login using a one-time event
+    LaunchedEffect(Unit) {
+        authViewModel.loginSuccess.collect {
             // Success! AuthViewModel already determined the user's role.
             navController.navigate(Screen.HomeGraph.route) {
                 // Clear the entire navigation stack up to the root
@@ -50,6 +47,7 @@ fun LoginScreen(
                 message = errorMessage!!,
                 actionLabel = "Dismiss"
             )
+            authViewModel.clearError() // Clear error after showing
         }
     }
 

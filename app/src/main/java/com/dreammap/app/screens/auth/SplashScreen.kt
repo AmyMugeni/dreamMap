@@ -13,23 +13,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.dreammap.app.Screen // Import your navigation routes
-import com.dreammap.app.ui.theme.IdeaYellow // Import the accent color
+import com.dreammap.app.Screen
+import kotlinx.coroutines.delay
+import android.util.Log
 
-// ✅ The SplashScreen is now a simple, clean UI component.
 @Composable
 fun SplashScreen(
-    // ADD THESE TWO PARAMETERS BACK:
     navController: NavHostController,
     authViewModel: AuthViewModel
-
-
 ) {
     val user by authViewModel.currentUser.collectAsState()
     val isLoading by authViewModel.isLoading.collectAsState()
-    // --- UI Structure (The "Seeds of Dreams" Look) ---
+
+    // --- UI ---
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -43,4 +40,40 @@ fun SplashScreen(
             fontWeight = FontWeight.ExtraBold
         )
     }
+
+    // --- Navigation Logic ---
+//    LaunchedEffect(Unit) {
+//        delay(1500)
+//        val user = authViewModel.currentUser.value
+//        val isLoading = authViewModel.isLoading.value
+//
+//        if (!isLoading) {
+//            when {
+//                user == null -> {
+//                    navController.navigate(Screen.AuthGraph.route) {
+//                        popUpTo(Screen.Splash.route) { inclusive = true }
+//                    }
+//                }
+//                user.role == "admin" -> {
+//                    navController.navigate(Screen.AdminDashboard.route) {
+//                        popUpTo(Screen.Splash.route) { inclusive = true }
+//                    }
+//                }
+//                else -> {
+//                    navController.navigate(Screen.HomeGraph.route) {
+//                        popUpTo(Screen.Splash.route) { inclusive = true }
+//                    }
+//                }
+//            }
+//        }
+//    }
+    LaunchedEffect(Unit) {
+        delay(1500)
+        navController.navigate(Screen.AuthGraph.route) {
+            Log.d("SplashScreen", "Navigating to AuthGraph...")
+
+            popUpTo(Screen.Splash.route) { inclusive = true }
+        }
+    }
+
 }
