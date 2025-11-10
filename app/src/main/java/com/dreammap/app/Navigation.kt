@@ -5,42 +5,53 @@ import androidx.navigation.navArgument
 
 /**
  * Defines all navigation routes (screens) in the application.
- * Routes are grouped into AuthGraph, HomeGraph, etc.
+ * Routes are grouped into AuthGraph, HomeGraph (Student), and MentorGraph.
  */
 sealed class Screen(val route: String) {
     // 1. Initial State
-    object Splash : Screen("splash_screen")
+    object Splash : Screen("splash")
 
     // 2. Authentication Flow (The Auth Graph)
     object AuthGraph : Screen("auth_graph") {
         // Nested destinations within the Auth Graph
-        object RoleSelection : Screen("auth/role_select")
-        object SignUp : Screen("auth/signup/{role}") {
-            fun createRoute(role: String) = "auth/signup/$role"
+        object RoleSelection : Screen("role_selection")
+        object SignUp : Screen("sign_up/{role}") {
+            fun createRoute(role: String) = "sign_up/$role"
         }
-        object Login : Screen("auth/login")
+        object Login : Screen("login")
     }
 
-    // 3. Main App Flow (The Home Graph)
+    // 3. Main App Flow (The Home Graph - Student Role)
     object HomeGraph : Screen("home_graph") {
-        // Nested destinations within the Home Graph (e.g., Tabs)
-        object Dashboard : Screen("home/dashboard")
-        object Mentors : Screen("home/mentors")
-        object Roadmaps : Screen("home/roadmaps")
-        object Profile : Screen("home/profile")
+        // Primary nested destinations (e.g., Tabs)
+        object Dashboard : Screen("dashboard")
+        object Roadmaps : Screen("roadmaps")
+        object Mentors : Screen("mentors")
+        object Profile : Screen("profile")
 
         // Detailed destinations with arguments
-        object RoadmapDetail : Screen("home/roadmap/{roadmapId}") {
-            fun createRoute(roadmapId: String) = "home/roadmap/$roadmapId"
+        object RoadmapDetail : Screen("roadmap_detail/{roadmapId}") {
+            fun createRoute(roadmapId: String) = "roadmap_detail/$roadmapId"
         }
-        object MentorDetail : Screen("home/mentor/{mentorId}") {
-            fun createRoute(mentorId: String) = "home/mentor/$mentorId"
+        object MentorDetail : Screen("mentor_detail/{mentorId}") {
+            fun createRoute(mentorId: String) = "mentor_detail/$mentorId"
         }
-        object Chat : Screen("home/chat/{partnerId}") {
-            fun createRoute(partnerId: String) = "home/chat/$partnerId"
+        // Using query parameter for optionality
+        object Chat : Screen("chat?partnerId={partnerId}") {
+            fun createRoute(partnerId: String?) = partnerId?.let { "chat?partnerId=$it" } ?: "chat"
         }
     }
 
-    // 4. Admin Flow
+    // 4. Mentor App Flow (The Mentor Graph)
+    object MentorGraph : Screen("mentor_graph") {
+        object Dashboard : Screen("mentor_dashboard")
+        object ManageMentees : Screen("manage_mentees")
+        // CRITICAL: Mentee Detail is required for the flow we built!
+        object MenteeDetail : Screen("mentee_detail/{menteeId}") {
+            fun createRoute(menteeId: String) = "mentee_detail/$menteeId"
+        }
+    }
+
+    // 5. Admin Flow
     object AdminDashboard : Screen("admin_dashboard")
 }
