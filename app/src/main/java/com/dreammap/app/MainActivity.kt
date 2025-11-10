@@ -21,10 +21,19 @@ import com.dreammap.app.screens.auth.RoleSelectionScreen
 import com.dreammap.app.screens.auth.SignUpScreen
 import com.dreammap.app.screens.auth.LoginScreen
 import com.dreammap.app.screens.auth.SplashScreen
+import com.dreammap.app.screens.mentor.ManageMenteesScreen
+import com.dreammap.app.screens.mentor.MenteeDetailScreen
+import com.dreammap.app.screens.mentor.MentorDashboardScreen
+import com.dreammap.app.screens.student.ChatScreen
+import com.dreammap.app.screens.student.DashboardScreen
+import com.dreammap.app.screens.student.MentorDetailScreen
+import com.dreammap.app.screens.student.MentorsScreen
+import com.dreammap.app.screens.student.RoadmapScreen
 import com.dreammap.app.ui.theme.DreamMapTheme
 import com.google.firebase.FirebaseApp
 import android.util.Log
 
+// --- 0. NAVIGATION ROUTES ---
 // --- 1. VIEWMODEL FACTORY ---
 class DreamMapViewModelFactory(private val authRepository: AuthRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -74,32 +83,35 @@ fun DreamMapNavRoot(authViewModel: AuthViewModel) {
 
     val navController = rememberNavController()
 
-    // ✅ Use Splash as start while loading
+    // ✅ Determine the correct start destination based on auth state and role
     val startDestination = remember(user, isLoading) {
         when {
             isLoading -> Screen.Splash.route
             user == null -> Screen.AuthGraph.route
             user?.role == "admin" -> Screen.AdminDashboard.route
-            else -> Screen.HomeGraph.route
+            user?.role == "mentor" -> Screen.MentorGraph.route // Route to Mentor graph
+            else -> Screen.HomeGraph.route // Default for students
         }
     }
 
-    // Always start from Splash
+    // NavHost determines the graph to show after the splash screen
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash.route
+        startDestination = Screen.Splash.route // Always start at Splash, which will then navigate
     ) {
-        // Splash
+        // Splash Screen
         composable(Screen.Splash.route) {
             SplashScreen(navController, authViewModel)
         }
 
-
         // Authentication Flow
         authNavGraph(navController, authViewModel)
 
-        // Home/Main Flow
+        // Main Flow (for students)
         homeNavGraph(navController, authViewModel)
+
+        // Mentor Flow
+        mentorNavGraph(navController, authViewModel)
 
         // Admin Dashboard
         composable(Screen.AdminDashboard.route) {
@@ -117,12 +129,9 @@ fun NavGraphBuilder.authNavGraph(
         startDestination = Screen.AuthGraph.RoleSelection.route,
         route = Screen.AuthGraph.route
     ) {
-        // Role selection
         composable(Screen.AuthGraph.RoleSelection.route) {
             RoleSelectionScreen(navController)
         }
-
-        // Sign-up screen with argument placeholder
         composable(
             route = Screen.AuthGraph.SignUp.route,
             arguments = listOf(navArgument("role") { type = NavType.StringType })
@@ -130,8 +139,6 @@ fun NavGraphBuilder.authNavGraph(
             val role = backStackEntry.arguments?.getString("role")
             SignUpScreen(navController, authViewModel, role)
         }
-
-        // Login screen
         composable(Screen.AuthGraph.Login.route) {
             LoginScreen(navController, authViewModel)
         }
@@ -139,7 +146,7 @@ fun NavGraphBuilder.authNavGraph(
 }
 
 
-// --- 5. NESTED HOME GRAPH ---
+// --- 5. NESTED HOME GRAPH (FOR STUDENTS) ---
 fun NavGraphBuilder.homeNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel
@@ -148,16 +155,63 @@ fun NavGraphBuilder.homeNavGraph(
         startDestination = Screen.HomeGraph.Dashboard.route,
         route = Screen.HomeGraph.route
     ) {
-        composable(Screen.HomeGraph.Dashboard.route) { /* Dashboard UI */ }
-        composable(Screen.HomeGraph.Roadmaps.route) { /* Roadmap List UI */ }
-        composable(Screen.HomeGraph.Mentors.route) { /* Mentor Directory UI */ }
+        composable(Screen.HomeGraph.Dashboard.route) { DashboardScreen(navController, authViewModel) }
+        composable(Screen.HomeGraph.Roadmaps.route) { RoadmapScreen(navController, authViewModel) }
+        composable(Screen.HomeGraph.Mentors.route) { MentorsScreen(navController, authViewModel) }
         composable(Screen.HomeGraph.Profile.route) { /* Profile UI */ }
 
-        composable(Screen.HomeGraph.RoadmapDetail.route) { /* Roadmap Detail UI */ }
-        composable(Screen.HomeGraph.Chat.route) { /* Chat Screen UI */ }
+        composable(
+            route = Screen.HomeGraph.RoadmapDetail.route,
+            arguments = listOf(navArgument("roadmapId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val roadmapId = backStackEntry.arguments?.getString("roadmapId")
+            // RoadmapDetailScreen(roadmapId, navController)
+        }
+        composable(
+            route = Screen.HomeGraph.MentorDetail.route,
+            arguments = listOf(navArgument("mentorId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val mentorId = backStackEntry.arguments?.getString("mentorId")
+            MentorDetailScreen(navController, mentorId)
+        }
+        composable(
+            route = Screen.HomeGraph.Chat.route,
+            arguments = listOf(navArgument("partnerId") {
+                type = NavType.StringType
+                nullable = true
+            })
+        ) { backStackEntry ->
+            val partnerId = backStackEntry.arguments?.getString("partnerId")
+            ChatScreen(navController, partnerId, authViewModel)
+        }
     }
 }
 
-// --- 6. PLACEHOLDER COMPOSABLES ---
+// --- 6. NESTED MENTOR GRAPH ---
+fun NavGraphBuilder.mentorNavGraph(
+    navController: NavHostController,
+    authViewModel: AuthViewModel
+) {
+    navigation(
+        startDestination = Screen.MentorGraph.Dashboard.route,
+        route = Screen.MentorGraph.route
+    ) {
+        composable(Screen.MentorGraph.Dashboard.route) {
+            MentorDashboardScreen(navController, authViewModel)
+        }
+        composable(Screen.MentorGraph.ManageMentees.route) {
+            ManageMenteesScreen(navController = navController)
+        }
+        composable(
+            route = Screen.MentorGraph.MenteeDetail.route,
+            arguments = listOf(navArgument("menteeId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val menteeId = backStackEntry.arguments?.getString("menteeId")
+            MenteeDetailScreen(navController, menteeId)
+        }
+    }
+}
+
+
+// --- 7. PLACEHOLDER COMPOSABLES ---
 @Composable fun AdminDashboardScreen() { /* Admin Dashboard UI */ }
-//@Composable fun RoleSelectionScreen(navController: NavHostController, authViewModel: AuthViewModel) { /* Role selection UI */ }
