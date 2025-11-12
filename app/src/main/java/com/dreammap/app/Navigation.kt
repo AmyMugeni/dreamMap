@@ -46,6 +46,7 @@ sealed class Screen(val route: String) {
     object MentorGraph : Screen("mentor_graph") {
         object Dashboard : Screen("mentor_dashboard")
         object ManageMentees : Screen("manage_mentees")
+        object MentorRequests : Screen("mentor_requests")
         // CRITICAL: Mentee Detail is required for the flow we built!
         object MenteeDetail : Screen("mentee_detail/{menteeId}") {
             fun createRoute(menteeId: String) = "mentee_detail/$menteeId"

@@ -8,6 +8,8 @@ object FirebaseConstants {
     const val ROADMAPS_COLLECTION = "roadmaps"
     const val BOOKINGS_COLLECTION = "bookings"
     const val CHATS_COLLECTION = "chats" // Needed for the MVP chat feature
+    const val MENTORSHIP_REQUESTS_COLLECTION = "mentorshipRequests" // Added for mentor management
+    const val MENTEE_PROFILES_COLLECTION = "menteeProfiles" // Added for mentor management
 
 
     // --- 2. USERS Collection Field Names ---
@@ -32,7 +34,7 @@ object FirebaseConstants {
     const val UNIVERSITIES_SUBCOLLECTION = "universities"
 
 
-    // --- 4. BOOKINGS Collection Field Names ---
+    // --- 4. BOOKINGS / REQUESTS Field Names ---
 
     const val FIELD_STUDENT_ID = "studentId"
     const val FIELD_MENTOR_ID = "mentorId"
@@ -43,4 +45,9 @@ object FirebaseConstants {
     // --- 5. CHAT Sub-Collections ---
 
     const val MESSAGES_SUBCOLLECTION = "messages"
+
+    // --- 6. Status Values (Bookings and Mentorship Requests) ---
+    const val STATUS_PENDING = "Pending"
+    const val STATUS_ACCEPTED = "Accepted"
+    const val STATUS_DECLINED = "Declined"
 }

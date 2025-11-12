@@ -1,41 +1,37 @@
 package com.dreammap.app
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.NavHostController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.dreammap.app.data.repositories.AuthRepository
-import com.dreammap.app.data.repositories.UserRepository
-import com.dreammap.app.screens.auth.AuthViewModel
-import com.dreammap.app.screens.auth.RoleSelectionScreen
-import com.dreammap.app.screens.auth.SignUpScreen
-import com.dreammap.app.screens.auth.LoginScreen
-import com.dreammap.app.screens.auth.SplashScreen
-import com.dreammap.app.screens.mentor.ManageMenteesScreen
-import com.dreammap.app.screens.mentor.MenteeDetailScreen
-import com.dreammap.app.screens.mentor.MentorDashboardScreen
-import com.dreammap.app.screens.student.ChatScreen
-import com.dreammap.app.screens.student.DashboardScreen
-import com.dreammap.app.screens.student.MentorDetailScreen
-import com.dreammap.app.screens.student.MentorsScreen
-import com.dreammap.app.screens.student.RoadmapScreen
+import com.dreammap.app.data.repositories.*
+import com.dreammap.app.screens.auth.*
+import com.dreammap.app.screens.mentor.*
+import com.dreammap.app.screens.student.*
 import com.dreammap.app.ui.theme.DreamMapTheme
+import com.dreammap.app.viewmodels.MentorViewModel
 import com.google.firebase.FirebaseApp
-import android.util.Log
+import com.google.firebase.firestore.FirebaseFirestore
 
-// --- 0. NAVIGATION ROUTES ---
-// --- 1. VIEWMODEL FACTORY ---
-class DreamMapViewModelFactory(private val authRepository: AuthRepository) : ViewModelProvider.Factory {
+// --- VIEWMODEL FACTORIES ---
+class AuthViewModelFactory(private val authRepository: AuthRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
@@ -45,93 +41,110 @@ class DreamMapViewModelFactory(private val authRepository: AuthRepository) : Vie
     }
 }
 
-// --- 2. MAIN ACTIVITY ---
+class MentorViewModelFactory(
+    private val userRepository: UserRepository,
+    private val bookingRepository: BookingRepository,
+    private val mentorshipRepository: MentorshipRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(MentorViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return MentorViewModel(userRepository, bookingRepository, mentorshipRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+
+// --- MAIN ACTIVITY ---
 class MainActivity : ComponentActivity() {
 
     private lateinit var authRepository: AuthRepository
+    private lateinit var userRepository: UserRepository
+    private lateinit var bookingRepository: BookingRepository
+    private lateinit var mentorshipRepository: MentorshipRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // ✅ Initialize Firebase
         FirebaseApp.initializeApp(this)
         Log.d("FirebaseTest", "Firebase initialized successfully!")
 
-        // ✅ Create repositories
-        val userRepository = UserRepository()
+        // Create repositories
+        userRepository = UserRepository()
+        bookingRepository = BookingRepository()
+        mentorshipRepository = MentorshipRepositoryImpl(FirebaseFirestore.getInstance(), "com.dreammap.app")
         authRepository = AuthRepository(userRepository = userRepository)
 
-        // ✅ Set content
         setContent {
             DreamMapTheme {
                 DreamMapNavRoot(
-                    authViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
-                        factory = DreamMapViewModelFactory(authRepository)
-                    )
+                    authViewModel = viewModel(factory = AuthViewModelFactory(authRepository)),
+                    userRepository = userRepository,
+                    bookingRepository = bookingRepository,
+                    mentorshipRepository = mentorshipRepository
                 )
             }
         }
     }
 }
 
-// --- 3. TOP-LEVEL NAVIGATION ROOT ---
+// --- TOP-LEVEL NAVIGATION ROOT ---
 @Composable
-fun DreamMapNavRoot(authViewModel: AuthViewModel) {
-    Log.d("DreamMapNavRoot", "Building NavRoot...")
-
+fun DreamMapNavRoot(
+    authViewModel: AuthViewModel,
+    userRepository: UserRepository,
+    bookingRepository: BookingRepository,
+    mentorshipRepository: MentorshipRepository
+) {
     val user by authViewModel.currentUser.collectAsState()
     val isLoading by authViewModel.isLoading.collectAsState()
-
     val navController = rememberNavController()
 
-    // ✅ Determine the correct start destination based on auth state and role
-    val startDestination = remember(user, isLoading) {
+    val startDestination = remember(user) {
         when {
-            isLoading -> Screen.Splash.route
             user == null -> Screen.AuthGraph.route
             user?.role == "admin" -> Screen.AdminDashboard.route
-            user?.role == "mentor" -> Screen.MentorGraph.route // Route to Mentor graph
-            else -> Screen.HomeGraph.route // Default for students
+            user?.role == "mentor" -> Screen.MentorGraph.route
+            else -> Screen.HomeGraph.route
         }
     }
 
-    // NavHost determines the graph to show after the splash screen
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Splash.route // Always start at Splash, which will then navigate
-    ) {
+    NavHost(navController = navController, startDestination = Screen.Splash.route) {
         // Splash Screen
         composable(Screen.Splash.route) {
-            SplashScreen(navController, authViewModel)
+            LaunchedEffect(isLoading, user) {
+                if (!isLoading) {
+                    navController.navigate(startDestination) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
         }
 
-        // Authentication Flow
+        // Auth Flow
         authNavGraph(navController, authViewModel)
 
-        // Main Flow (for students)
-        homeNavGraph(navController, authViewModel)
+        // Student Flow
+        homeNavGraph(navController, authViewModel, userRepository, bookingRepository, mentorshipRepository)
 
         // Mentor Flow
-        mentorNavGraph(navController, authViewModel)
+        val mentorViewModelFactory = MentorViewModelFactory(userRepository, bookingRepository, mentorshipRepository)
+        mentorNavGraph(navController, mentorViewModelFactory)
 
         // Admin Dashboard
-        composable(Screen.AdminDashboard.route) {
-            AdminDashboardScreen()
-        }
+        composable(Screen.AdminDashboard.route) { AdminDashboardScreen() }
     }
 }
 
-// --- 4. NESTED AUTHENTICATION GRAPH ---
-fun NavGraphBuilder.authNavGraph(
-    navController: NavHostController,
-    authViewModel: AuthViewModel
-) {
+// --- AUTH NAV GRAPH ---
+fun NavGraphBuilder.authNavGraph(navController: NavHostController, authViewModel: AuthViewModel) {
     navigation(
         startDestination = Screen.AuthGraph.RoleSelection.route,
         route = Screen.AuthGraph.route
     ) {
-        composable(Screen.AuthGraph.RoleSelection.route) {
-            RoleSelectionScreen(navController)
-        }
+        composable(Screen.AuthGraph.RoleSelection.route) { RoleSelectionScreen(navController) }
         composable(
             route = Screen.AuthGraph.SignUp.route,
             arguments = listOf(navArgument("role") { type = NavType.StringType })
@@ -139,47 +152,43 @@ fun NavGraphBuilder.authNavGraph(
             val role = backStackEntry.arguments?.getString("role")
             SignUpScreen(navController, authViewModel, role)
         }
-        composable(Screen.AuthGraph.Login.route) {
-            LoginScreen(navController, authViewModel)
-        }
+        composable(Screen.AuthGraph.Login.route) { LoginScreen(navController, authViewModel) }
     }
 }
 
-
-// --- 5. NESTED HOME GRAPH (FOR STUDENTS) ---
+// --- HOME NAV GRAPH (STUDENT FLOW) ---
 fun NavGraphBuilder.homeNavGraph(
     navController: NavHostController,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    userRepository: UserRepository,
+    bookingRepository: BookingRepository,
+    mentorshipRepository: MentorshipRepository
 ) {
     navigation(
         startDestination = Screen.HomeGraph.Dashboard.route,
         route = Screen.HomeGraph.route
     ) {
+        val mentorViewModelFactory = MentorViewModelFactory(userRepository, bookingRepository, mentorshipRepository)
+
         composable(Screen.HomeGraph.Dashboard.route) { DashboardScreen(navController, authViewModel) }
         composable(Screen.HomeGraph.Roadmaps.route) { RoadmapScreen(navController, authViewModel) }
         composable(Screen.HomeGraph.Mentors.route) { MentorsScreen(navController, authViewModel) }
         composable(Screen.HomeGraph.Profile.route) { /* Profile UI */ }
-
-        composable(
-            route = Screen.HomeGraph.RoadmapDetail.route,
-            arguments = listOf(navArgument("roadmapId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val roadmapId = backStackEntry.arguments?.getString("roadmapId")
-            // RoadmapDetailScreen(roadmapId, navController)
-        }
         composable(
             route = Screen.HomeGraph.MentorDetail.route,
             arguments = listOf(navArgument("mentorId") { type = NavType.StringType })
         ) { backStackEntry ->
             val mentorId = backStackEntry.arguments?.getString("mentorId")
-            MentorDetailScreen(navController, mentorId)
+            MentorDetailScreen(
+                navController = navController,
+                mentorId = mentorId,
+                authViewModel = authViewModel,
+                mentorViewModel = viewModel(factory = mentorViewModelFactory)
+            )
         }
         composable(
             route = Screen.HomeGraph.Chat.route,
-            arguments = listOf(navArgument("partnerId") {
-                type = NavType.StringType
-                nullable = true
-            })
+            arguments = listOf(navArgument("partnerId") { type = NavType.StringType; nullable = true })
         ) { backStackEntry ->
             val partnerId = backStackEntry.arguments?.getString("partnerId")
             ChatScreen(navController, partnerId, authViewModel)
@@ -187,31 +196,42 @@ fun NavGraphBuilder.homeNavGraph(
     }
 }
 
-// --- 6. NESTED MENTOR GRAPH ---
+// --- MENTOR NAV GRAPH ---
 fun NavGraphBuilder.mentorNavGraph(
     navController: NavHostController,
-    authViewModel: AuthViewModel
+    mentorViewModelFactory: MentorViewModelFactory
 ) {
     navigation(
-        startDestination = Screen.MentorGraph.Dashboard.route,
-        route = Screen.MentorGraph.route
+        startDestination = "mentor/dashboard",
+        route = "mentor_graph"
     ) {
-        composable(Screen.MentorGraph.Dashboard.route) {
-            MentorDashboardScreen(navController, authViewModel)
+        composable("mentor/dashboard") {
+            val mentorViewModel: MentorViewModel = viewModel(factory = mentorViewModelFactory)
+            MentorDashboardScreen(navController = navController, mentorViewModel = mentorViewModel)
         }
-        composable(Screen.MentorGraph.ManageMentees.route) {
-            ManageMenteesScreen(navController = navController)
-        }
+
         composable(
-            route = Screen.MentorGraph.MenteeDetail.route,
+            route = "mentor/menteeDetail/{menteeId}",
             arguments = listOf(navArgument("menteeId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val menteeId = backStackEntry.arguments?.getString("menteeId")
-            MenteeDetailScreen(navController, menteeId)
+            // Safe argument extraction
+            val menteeId = backStackEntry.arguments?.getString("menteeId") ?: ""
+            val mentorViewModel: MentorViewModel = viewModel(factory = mentorViewModelFactory)
+
+            MenteeDetailScreen(
+                navController = navController,
+                menteeId = menteeId,
+                mentorViewModel = mentorViewModel
+            )
         }
+//
+//        composable("mentor/requestDetail/{requestId}") { backStackEntry ->
+//            val requestId = backStackEntry.arguments?.getString("requestId") ?: ""
+//            val mentorViewModel: MentorViewModel = viewModel(factory = mentorViewModelFactory)
+//            MentorRequestDetailScreen(navController, requestId, mentorViewModel)
+//        }
     }
 }
 
-
-// --- 7. PLACEHOLDER COMPOSABLES ---
+// --- PLACEHOLDER COMPOSABLES ---
 @Composable fun AdminDashboardScreen() { /* Admin Dashboard UI */ }
