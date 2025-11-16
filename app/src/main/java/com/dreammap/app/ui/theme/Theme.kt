@@ -18,39 +18,44 @@ import androidx.core.view.WindowCompat
 
 // --- Light Color Scheme (Default) ---
 private val LightColorScheme = lightColorScheme(
-    primary = BrightBlue,          // Main elements (buttons, primary text)
-    secondary = NavyBlue,          // Deeper contrast elements (e.g., secondary buttons)
-    tertiary = LightCyan,          // Accents and highlights
+    primary = DarkPurple,          // Main elements (buttons, primary text)
+    secondary = MediumPurple,      // Secondary buttons, elements
+    tertiary = LightPurple,        // Accents and highlights
 
-    background = White,            // General screen background
-    surface = LightGray,           // Card backgrounds, dialogs
+    background = VeryLightPurple,  // General screen background (lavender tint)
+    surface = White,               // Card backgrounds, dialogs
+    surfaceVariant = LightPurple.copy(alpha = 0.3f), // Subtle purple tint for variant surfaces
     error = Color(0xFFB00020),     // Error states
     onPrimary = White,             // Text on primary color
-    onBackground = NavyBlue        // Text on screen background
-    // ... other colors
+    onSecondary = White,           // Text on secondary color
+    onBackground = DarkPurple,     // Text on screen background
+    onSurface = DarkPurple        // Text on surface
 )
 
-// --- Dark Color Scheme (Optional, but good practice) ---
+// --- Dark Color Scheme (Purple & Black Theme) ---
 private val DarkColorScheme = darkColorScheme(
-    primary = LightCyan,           // Main elements (buttons, primary text)
-    secondary = BrightBlue,        // Contrast elements
-    tertiary = IdeaYellow,         // Accents
+    primary = MediumPurple,        // Main elements (buttons, primary text) - vibrant purple
+    secondary = LightPurple,       // Secondary elements - lighter purple
+    tertiary = Gold,               // Accents (gold for gamification)
 
-    background = NavyBlue,         // General screen background
-    surface = DarkNavy,   // Card backgrounds (darker navy)
+    background = NearBlack,        // General screen background (near black)
+    surface = DarkBlack,           // Card backgrounds (dark black)
+    surfaceVariant = Charcoal,    // Elevated surfaces (charcoal)
     error = Color(0xFFCF6679),
-    onPrimary = NavyBlue,          // Text on primary color
-    onBackground = White           // Text on screen background
-    // ... other colors
+    onPrimary = White,             // Text on primary color
+    onSecondary = White,           // Text on secondary color
+    onBackground = White,          // Text on screen background
+    onSurface = White,            // Text on surface
+    onSurfaceVariant = LightPurple.copy(alpha = 0.8f) // Text on variant surfaces
 )
 
 // --- DreamMapTheme Composable ---
 
 @Composable
 fun DreamMapTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true, // Default to dark theme (purple & black)
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Disable dynamic color to use our custom purple & black theme
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
