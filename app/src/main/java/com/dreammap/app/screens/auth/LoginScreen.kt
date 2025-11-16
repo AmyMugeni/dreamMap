@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.dreammap.app.viewmodels.AuthViewModelFactory
@@ -42,7 +43,9 @@ fun LoginScreen(
             // Check the user's role to determine the navigation route
             when (user.role) {
                 FirebaseConstants.ROLE_MENTOR -> {
-                    navController.navigate(Screen.MentorGraph.createRoute(user.uid, user.name)) {
+                    navController.navigate(
+                        Screen.MentorGraph.createRoute(user.uid, user.name ?: "Mentor")
+                    ) {
                         popUpTo(Screen.AuthGraph.route) { inclusive = true }
                     }
                 }
@@ -78,14 +81,30 @@ fun LoginScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Log In") },
+                title = { 
+                    Text(
+                        "Log In",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    ) 
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                ),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.Filled.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
