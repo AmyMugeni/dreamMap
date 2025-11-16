@@ -51,14 +51,30 @@ fun MentorDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(selectedMentor?.name ?: "Mentor Profile") },
+                title = { 
+                    Text(
+                        selectedMentor?.name ?: "Mentor Profile",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    ) 
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                ),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             )
         },
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             selectedMentor?.let { mentor ->
 

@@ -23,13 +23,15 @@ import androidx.compose.ui.unit.dp
 import com.dreammap.app.data.model.User
 import com.dreammap.app.viewmodels.MentorDirectoryViewModel
 import androidx.compose.material.icons.filled.ChevronRight // Required for the navigation icon
+import com.dreammap.app.components.DreamMapBottomNavigation
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MentorsScreen(
+    navController: NavController,
     viewModel: MentorDirectoryViewModel,
-    onMentorClick: (String) -> Unit,
-    onBackClick: () -> Unit // Added callback for the back action
+    onMentorClick: (String) -> Unit
 ) {
     val mentors by viewModel.mentors.collectAsState()
 
@@ -40,23 +42,24 @@ fun MentorsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Find Your Mentor") },
-                // --- Navigation Icon (Back Button) ---
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back"
-                        )
-                    }
+                title = { 
+                    Text(
+                        "Find Your Mentor",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    ) 
                 },
-                // ------------------------------------
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.primary
                 )
             )
-        }
+        },
+        bottomBar = {
+            DreamMapBottomNavigation(navController = navController)
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         if (mentors.isEmpty()) {
             Box(
