@@ -22,5 +22,9 @@ data class Roadmap(
     @PropertyName("weekly_time_commitment") var weeklyTimeCommitment: String = "", // Change to var
     @PropertyName("recommended_interests") var recommendedInterests: List<String> = emptyList(), // Change to var
     @PropertyName("skills_required") var skillsRequired: List<String> = emptyList(), // Change to var
-    var milestones: List<Milestone> = emptyList()
+    var milestones: List<Milestone> = emptyList(),
+    // Events & Webinars - Similar to recommendedInterests, stored as a list in Firestore
+    @PropertyName("events") var events: List<Event> = emptyList(),
+    // Resource Library - Similar to recommendedInterests, stored as a list in Firestore
+    @PropertyName("resources") var resources: List<Resource> = emptyList()
 )
