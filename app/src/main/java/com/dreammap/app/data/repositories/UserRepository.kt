@@ -127,4 +127,20 @@ class UserRepository(
         }
     }
 
+    /**
+     * Admin: Deletes a user document from Firestore.
+     * Note: This only deletes the Firestore document, not the Firebase Auth account.
+     */
+    suspend fun deleteUser(uid: String): Boolean {
+        return try {
+            println("DEBUG: Attempting to delete user document for UID=$uid")
+            usersCollection.document(uid).delete().await()
+            println("DEBUG: User document successfully deleted for UID=$uid")
+            true
+        } catch (e: Exception) {
+            println("ERROR: Failed to delete user document for UID=$uid. Error=${e.message}")
+            false
+        }
+    }
+
 }

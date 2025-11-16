@@ -291,7 +291,20 @@ fun AppNavRoot(
         // Admin Dashboard
         composable("${Screen.AdminGraph.route}/${Screen.AdminGraph.Dashboard.route}") {
             val adminVm: AdminViewModel = viewModel(factory = adminVmFactory)
-            AdminDashboardScreen(navController = navController, adminViewModel = adminVm)
+            AdminDashboardScreen(
+                navController = navController,
+                adminViewModel = adminVm,
+                authViewModel = authViewModel
+            )
+        }
+
+        // Admin Profile
+        composable("${Screen.AdminGraph.route}/${Screen.AdminGraph.Profile.route}") {
+            AdminProfileScreen(
+                navController = navController,
+                authViewModel = authViewModel,
+                userRepository = userRepository
+            )
         }
 
         // Manage Students

@@ -1,5 +1,6 @@
 package com.dreammap.app.screens.admin
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -33,6 +34,10 @@ fun UserDetailScreen(
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Dialog state variables
+    var showRoleDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         adminViewModel.loadUserDetail(userId)
@@ -300,6 +305,184 @@ fun UserDetailScreen(
                                 }
                             }
                         }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // Admin Actions Section
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Admin Actions",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            // Change Role Button
+                            Button(
+                                onClick = { showRoleDialog = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            ) {
+                                Icon(Icons.Filled.SwapHoriz, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Change Role")
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Toggle Availability (for mentors only)
+                            if (user.role == FirebaseConstants.ROLE_MENTOR) {
+                                val currentAvailability = user.isAvailable
+                                Button(
+                                    onClick = {
+                                        adminViewModel.toggleMentorAvailability(
+                                            user.uid,
+                                            !currentAvailability
+                                        )
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                "Mentor availability ${if (!currentAvailability) "enabled" else "disabled"}"
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (currentAvailability)
+                                            MaterialTheme.colorScheme.tertiaryContainer
+                                        else
+                                            MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = if (currentAvailability)
+                                            MaterialTheme.colorScheme.onTertiaryContainer
+                                        else
+                                            MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                ) {
+                                    Icon(
+                                        if (currentAvailability) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        contentDescription = null
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(if (currentAvailability) "Disable Availability" else "Enable Availability")
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // Delete User Button
+                            Button(
+                                onClick = { showDeleteDialog = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            ) {
+                                Icon(Icons.Filled.Delete, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Delete User")
+                            }
+                        }
+                    }
+
+                    // Role Change Dialog
+                    if (showRoleDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showRoleDialog = false },
+                            title = { Text("Change User Role") },
+                            text = {
+                                Column {
+                                    Text("Current role: ${user.role}")
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text("Select new role:")
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    val roles = listOf(
+                                        FirebaseConstants.ROLE_STUDENT,
+                                        FirebaseConstants.ROLE_MENTOR,
+                                        FirebaseConstants.ROLE_ADMIN
+                                    )
+                                    roles.forEach { role ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    adminViewModel.changeUserRole(user.uid, role)
+                                                    showRoleDialog = false
+                                                    scope.launch {
+                                                        snackbarHostState.showSnackbar("Role changed to $role")
+                                                    }
+                                                }
+                                                .padding(vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            RadioButton(
+                                                selected = user.role == role,
+                                                onClick = {
+                                                    adminViewModel.changeUserRole(user.uid, role)
+                                                    showRoleDialog = false
+                                                    scope.launch {
+                                                        snackbarHostState.showSnackbar("Role changed to $role")
+                                                    }
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                role.replaceFirstChar { it.uppercase() },
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { showRoleDialog = false }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
+                    }
+
+                    // Delete Confirmation Dialog
+                    if (showDeleteDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteDialog = false },
+                            title = { Text("Delete User") },
+                            text = {
+                                Text("Are you sure you want to delete ${user.name}? This action cannot be undone.")
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        adminViewModel.deleteUser(user.uid) {
+                                            navController.popBackStack()
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("User deleted successfully")
+                                            }
+                                        }
+                                        showDeleteDialog = false
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text("Delete")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showDeleteDialog = false }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
                     }
                 }
 

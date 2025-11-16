@@ -7,11 +7,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -23,6 +21,7 @@ import androidx.navigation.NavHostController
 import com.dreammap.app.Screen
 import com.dreammap.app.data.model.User
 import com.dreammap.app.viewmodels.AdminViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +35,9 @@ fun ManageStudentsScreen(
     LaunchedEffect(Unit) {
         adminViewModel.loadStudents()
     }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -54,7 +56,8 @@ fun ManageStudentsScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (isLoading) {
             Box(
@@ -102,9 +105,22 @@ fun ManageStudentsScreen(
                     )
                 }
                 items(students, key = { it.uid }) { student ->
-                    StudentListItem(student = student) {
-                        navController.navigate("${Screen.AdminGraph.route}/${Screen.AdminGraph.UserDetail.createRoute(student.uid)}")
-                    }
+                    StudentListItem(
+                        student = student,
+                        onItemClick = {
+                            navController.navigate("${Screen.AdminGraph.route}/${Screen.AdminGraph.UserDetail.createRoute(student.uid)}")
+                        },
+                        onDelete = {
+                            adminViewModel.deleteUser(student.uid) {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Student deleted successfully")
+                                }
+                                adminViewModel.loadStudents()
+                            }
+                        },
+                        adminViewModel = adminViewModel,
+                        snackbarHostState = snackbarHostState
+                    )
                 }
             }
         }
@@ -112,11 +128,21 @@ fun ManageStudentsScreen(
 }
 
 @Composable
-fun StudentListItem(student: User, onClick: () -> Unit) {
+fun StudentListItem(
+    student: User,
+    onItemClick: () -> Unit,
+    onDelete: () -> Unit,
+    adminViewModel: AdminViewModel,
+    snackbarHostState: SnackbarHostState
+) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onItemClick),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
@@ -191,14 +217,89 @@ fun StudentListItem(student: User, onClick: () -> Unit) {
                 }
             }
 
-            // Trailing Icon
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = "View Student Details",
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                modifier = Modifier.size(20.dp)
-            )
+            // Trailing Icons
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Menu Button
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "More options",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("View Details") },
+                            onClick = {
+                                showMenu = false
+                                onItemClick()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Info, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                showMenu = false
+                                showDeleteDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        )
+                    }
+                }
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = "View Student Details",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
+    }
+
+    // Delete Confirmation Dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Student") },
+            text = {
+                Text("Are you sure you want to delete ${student.name}? This action cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        adminViewModel.deleteUser(student.uid) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Student deleted successfully")
+                            }
+                            adminViewModel.loadStudents()
+                        }
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

@@ -121,4 +121,20 @@ class AuthViewModel(
         _currentUser.value = null
         _errorMessage.value = null
     }
+
+    /**
+     * Refreshes the current user's profile from Firestore.
+     * Useful after updating profile information.
+     */
+    fun refreshCurrentUser() = viewModelScope.launch {
+        val authUser = authRepository.getCurrentFirebaseUser()
+        if (authUser != null) {
+            val result = authRepository.getProfileByUid(authUser.uid)
+            result.onSuccess { user ->
+                _currentUser.value = user
+            }.onFailure { e ->
+                _errorMessage.value = "Failed to refresh profile: ${e.message}"
+            }
+        }
+    }
 }

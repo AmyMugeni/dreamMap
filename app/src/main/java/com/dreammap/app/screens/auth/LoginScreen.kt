@@ -13,6 +13,7 @@ import com.dreammap.app.viewmodels.AuthViewModelFactory
 import com.dreammap.app.data.repositories.AuthRepository
 import androidx.navigation.NavHostController
 import com.dreammap.app.Screen
+import com.dreammap.app.util.constants.FirebaseConstants
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 
@@ -38,16 +39,25 @@ fun LoginScreen(
     // 1. Navigate on successful login using a one-time event
     LaunchedEffect(Unit) {
         authViewModel.loginSuccess.collect { user ->
-            // THE FIX: Check the user's role to determine the navigation route
-            val route = if (user.role == "mentor") {
-                Screen.MentorGraph.createRoute(user.uid, user.name)
-            } else {
-                Screen.HomeGraph.route
+            // Check the user's role to determine the navigation route
+            when (user.role) {
+                FirebaseConstants.ROLE_MENTOR -> {
+                    navController.navigate(Screen.MentorGraph.createRoute(user.uid, user.name)) {
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    }
+                }
+                FirebaseConstants.ROLE_ADMIN -> {
+                    navController.navigate("${Screen.AdminGraph.route}/${Screen.AdminGraph.Dashboard.route}") {
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    }
+                }
+                else -> {
+                    // Default to student dashboard
+                    navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    }
+                }
             }
-            navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
-                popUpTo(Screen.AuthGraph.route) { inclusive = true }
-            }
-
         }
     }
 

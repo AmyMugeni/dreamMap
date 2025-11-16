@@ -16,13 +16,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.dreammap.app.Screen
+import com.dreammap.app.screens.auth.AuthViewModel
 import com.dreammap.app.viewmodels.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
     navController: NavHostController,
-    adminViewModel: AdminViewModel
+    adminViewModel: AdminViewModel,
+    authViewModel: AuthViewModel
 ) {
     val stats by adminViewModel.stats.collectAsState()
     val isLoading by adminViewModel.isLoading.collectAsState()
@@ -31,6 +33,13 @@ fun AdminDashboardScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Admin Dashboard") },
+                actions = {
+                    IconButton(onClick = {
+                        navController.navigate("${Screen.AdminGraph.route}/${Screen.AdminGraph.Profile.route}")
+                    }) {
+                        Icon(Icons.Filled.Person, contentDescription = "Profile")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer

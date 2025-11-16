@@ -128,8 +128,75 @@ class AdminViewModel(
                 userRepository.updateUserProfile(userId, updates)
                 // Reload data after update
                 loadAllData()
+                // Reload current user detail if it's the same user
+                if (_selectedUser.value?.uid == userId) {
+                    loadUserDetail(userId)
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to update user: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun deleteUser(userId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val success = userRepository.deleteUser(userId)
+                if (success) {
+                    // Reload data after deletion
+                    loadAllData()
+                    loadStudents()
+                    loadMentors()
+                    _selectedUser.value = null
+                    onSuccess()
+                } else {
+                    _errorMessage.value = "Failed to delete user"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to delete user: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun changeUserRole(userId: String, newRole: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                userRepository.updateUserProfile(userId, mapOf("role" to newRole))
+                // Reload data after role change
+                loadAllData()
+                loadStudents()
+                loadMentors()
+                // Reload current user detail if it's the same user
+                if (_selectedUser.value?.uid == userId) {
+                    loadUserDetail(userId)
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to change user role: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun toggleMentorAvailability(userId: String, isAvailable: Boolean) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                userRepository.updateUserProfile(userId, mapOf("available" to isAvailable))
+                // Reload data after update
+                loadMentors()
+                // Reload current user detail if it's the same user
+                if (_selectedUser.value?.uid == userId) {
+                    loadUserDetail(userId)
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to update mentor availability: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
