@@ -8,11 +8,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,7 +28,6 @@ import androidx.navigation.NavHostController
 import com.dreammap.app.Screen
 import com.dreammap.app.data.model.User
 import com.dreammap.app.viewmodels.AdminViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,12 +38,12 @@ fun ManageMentorsScreen(
     val mentors by adminViewModel.mentors.collectAsState()
     val isLoading by adminViewModel.isLoading.collectAsState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(Unit) {
         adminViewModel.loadMentors()
     }
-
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -116,14 +120,9 @@ fun ManageMentorsScreen(
                     )
                 }
                 items(mentors, key = { it.uid }) { mentor ->
-                    MentorListItem(
-                        mentor = mentor,
-                        onItemClick = {
-                            navController.navigate("${Screen.AdminGraph.route}/${Screen.AdminGraph.UserDetail.createRoute(mentor.uid)}")
-                        },
-                        adminViewModel = adminViewModel,
-                        snackbarHostState = snackbarHostState
-                    )
+                    MentorListItem(mentor = mentor) {
+                        navController.navigate("${Screen.AdminGraph.route}/${Screen.AdminGraph.UserDetail.createRoute(mentor.uid)}")
+                    }
                 }
             }
         }
@@ -131,19 +130,11 @@ fun ManageMentorsScreen(
 }
 
 @Composable
-fun MentorListItem(
-    mentor: User,
-    onItemClick: () -> Unit,
-    adminViewModel: AdminViewModel,
-    snackbarHostState: SnackbarHostState
-) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    var showMenu by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+fun MentorListItem(mentor: User, onClick: () -> Unit) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onItemClick),
+            .clickable(onClick = onClick),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
@@ -229,112 +220,14 @@ fun MentorListItem(
                 }
             }
 
-            // Trailing Icons
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Menu Button
-                Box {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "More options",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("View Details") },
-                            onClick = {
-                                showMenu = false
-                                onItemClick()
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Info, contentDescription = null)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    if (mentor.isAvailable) "Disable Availability" else "Enable Availability"
-                                )
-                            },
-                            onClick = {
-                                showMenu = false
-                                adminViewModel.toggleMentorAvailability(mentor.uid, !mentor.isAvailable)
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        "Mentor availability ${if (!mentor.isAvailable) "enabled" else "disabled"}"
-                                    )
-                                }
-                                adminViewModel.loadMentors()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    if (mentor.isAvailable) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = null
-                                )
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
-                            onClick = {
-                                showMenu = false
-                                showDeleteDialog = true
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        )
-                    }
-                }
-                Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = "View Mentor Details",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            // Trailing Icon
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = "View Mentor Details",
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
+            )
         }
-    }
-
-    // Delete Confirmation Dialog
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Mentor") },
-            text = {
-                Text("Are you sure you want to delete ${mentor.name}? This action cannot be undone.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        adminViewModel.deleteUser(mentor.uid) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Mentor deleted successfully")
-                            }
-                            adminViewModel.loadMentors()
-                        }
-                        showDeleteDialog = false
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 }
 
