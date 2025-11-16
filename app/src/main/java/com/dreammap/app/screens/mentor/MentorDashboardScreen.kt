@@ -55,10 +55,17 @@ fun MentorDashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mentor Hub") },
+                title = { 
+                    Text(
+                        "Mentor Hub",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    ) 
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    titleContentColor = MaterialTheme.colorScheme.primary
                 ),
                 actions = {
                     IconButton(onClick = navigateToProfileEdit) {
@@ -71,7 +78,8 @@ fun MentorDashboardScreen(
                     }
                 }
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(modifier = Modifier
             .fillMaxSize()
@@ -82,7 +90,10 @@ fun MentorDashboardScreen(
                 label = "Loading Content Transition"
             ) { isContentLoading ->
                 if (isContentLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 } else {
                     LazyColumn(
                         modifier = Modifier

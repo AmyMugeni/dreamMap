@@ -29,6 +29,10 @@ sealed class Screen(val route: String) {
         object Roadmaps : Screen("roadmaps")
         object Mentors : Screen("mentors")
         object Profile : Screen("profile")
+        
+        // Quiz destinations
+        object Quiz : Screen("quiz")
+        object QuizResults : Screen("quiz_results")
 
         // Detailed destinations with arguments
         object RoadmapDetail : Screen("roadmap_detail/{roadmapId}") {

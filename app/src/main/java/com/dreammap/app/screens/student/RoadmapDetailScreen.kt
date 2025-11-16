@@ -24,9 +24,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.dreammap.app.data.model.Milestone
 import com.dreammap.app.data.model.Roadmap
+import com.dreammap.app.data.model.Event
+import com.dreammap.app.data.model.Resource
 import com.dreammap.app.viewmodels.RoadmapDetailUiState
 import com.dreammap.app.viewmodels.RoadmapViewModel
 import com.dreammap.app.ui.theme.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,6 +130,60 @@ fun RoadmapContent(
         }
         items(roadmap.milestones, key = { it.id }) { milestone ->
             MilestoneCard(milestone = milestone, onToggle = onMilestoneToggle)
+        }
+        
+        // Events & Webinars Section
+        if (roadmap.events.isNotEmpty()) {
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Events & Webinars",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${roadmap.events.size} available",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            items(roadmap.events, key = { it.id }) { event ->
+                EventCard(event = event)
+            }
+        }
+        
+        // Resource Library Section
+        if (roadmap.resources.isNotEmpty()) {
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Resource Library",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${roadmap.resources.size} resources",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            items(roadmap.resources, key = { it.id }) { resource ->
+                ResourceCard(resource = resource)
+            }
         }
     }
 }
@@ -399,6 +457,291 @@ fun MilestoneCard(
                             modifier = Modifier.padding(start = 8.dp, top = 4.dp)
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EventCard(event: Event) {
+    val dateFormat = SimpleDateFormat("MMM dd, yyyy 'at' HH:mm", Locale.getDefault())
+    val formattedDate = event.eventDate?.let { dateFormat.format(it.toDate()) } ?: "Date TBA"
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = when (event.eventType.lowercase()) {
+                                "webinar" -> Icons.Filled.VideoCall
+                                "workshop" -> Icons.Filled.Build
+                                "conference" -> Icons.Filled.Event
+                                else -> Icons.Filled.CalendarToday
+                            },
+                            contentDescription = event.eventType,
+                            tint = MediumPurple,
+                            modifier = Modifier.size(20.dp).padding(end = 8.dp)
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = LightPurple.copy(alpha = 0.2f)
+                        ) {
+                            Text(
+                                text = event.eventType.replaceFirstChar { 
+                                    if (it.isLowerCase()) it.titlecase() else it.toString() 
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MediumPurple,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = event.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = event.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        maxLines = 2
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Schedule,
+                    contentDescription = "Date",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = formattedDate,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Icon(
+                    imageVector = Icons.Filled.LocationOn,
+                    contentDescription = "Location",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = event.location,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+            if (event.maxParticipants > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${event.currentParticipants}/${event.maxParticipants} participants",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { 
+                    // TODO: Handle registration - open URL or navigate to registration screen
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (event.isRegistered) LightPurple else MediumPurple
+                )
+            ) {
+                Icon(
+                    imageVector = if (event.isRegistered) Icons.Filled.CheckCircle else Icons.Filled.EventAvailable,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp).padding(end = 8.dp)
+                )
+                Text(
+                    text = if (event.isRegistered) "Registered" else "Register Now",
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ResourceCard(resource: Resource) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Resource Icon/Thumbnail
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                MediumPurple.copy(alpha = 0.3f),
+                                LightPurple.copy(alpha = 0.2f)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = when (resource.resourceType.lowercase()) {
+                        "video" -> Icons.Filled.PlayCircle
+                        "article" -> Icons.Filled.Article
+                        "course" -> Icons.Filled.School
+                        "tutorial" -> Icons.Filled.MenuBook
+                        else -> Icons.Filled.Description
+                    },
+                    contentDescription = resource.resourceType,
+                    tint = MediumPurple,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = LightPurple.copy(alpha = 0.2f),
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        ) {
+                            Text(
+                                text = resource.resourceType.replaceFirstChar { 
+                                    if (it.isLowerCase()) it.titlecase() else it.toString() 
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MediumPurple,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                        Text(
+                            text = resource.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = resource.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            maxLines = 2
+                        )
+                    }
+                    IconButton(
+                        onClick = { 
+                            // TODO: Toggle bookmark
+                        },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (resource.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                            contentDescription = "Bookmark",
+                            tint = if (resource.isBookmarked) Gold else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (resource.durationMinutes > 0) {
+                        Icon(
+                            imageVector = Icons.Filled.AccessTime,
+                            contentDescription = "Duration",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "${resource.durationMinutes} min",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                    if (resource.difficultyLevel.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = when (resource.difficultyLevel.lowercase()) {
+                                "beginner" -> LightPurple.copy(alpha = 0.2f)
+                                "intermediate" -> MediumPurple.copy(alpha = 0.2f)
+                                "advanced" -> DarkPurple.copy(alpha = 0.2f)
+                                else -> MaterialTheme.colorScheme.surfaceVariant
+                            }
+                        ) {
+                            Text(
+                                text = resource.difficultyLevel.replaceFirstChar { 
+                                    if (it.isLowerCase()) it.titlecase() else it.toString() 
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MediumPurple,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    if (resource.author.isNotEmpty()) {
+                        Text(
+                            text = "by ${resource.author}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = { 
+                        // TODO: Open resource URL
+                    },
+                    modifier = Modifier.padding(start = (-8).dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.OpenInNew,
+                        contentDescription = "Open",
+                        modifier = Modifier.size(16.dp).padding(end = 4.dp)
+                    )
+                    Text(
+                        text = "View Resource",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MediumPurple
+                    )
                 }
             }
         }

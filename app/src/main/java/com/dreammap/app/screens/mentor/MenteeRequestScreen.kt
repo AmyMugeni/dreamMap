@@ -34,14 +34,30 @@ fun MenteeRequestsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mentorship Requests") },
+                title = { 
+                    Text(
+                        "Mentorship Requests",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Go back")
+                        Icon(
+                            Icons.Filled.ArrowBack, 
+                            contentDescription = "Go back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (requests.isEmpty() && !isProcessing) {

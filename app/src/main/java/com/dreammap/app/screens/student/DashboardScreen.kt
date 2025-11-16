@@ -92,6 +92,18 @@ fun DashboardScreen(
                 )
 
                 ActionCard(
+                    icon = Icons.Filled.Assignment,
+                    iconColor = Gold,
+                    title = "Career Interest Quiz",
+                    description = "Discover your career path based on your interests and strengths.",
+                    onClick = {
+                        navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Quiz.route}")
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ActionCard(
                     icon = Icons.Filled.Timeline,
                     iconColor = PrimaryAccent,
                     title = "Explore Roadmaps",
