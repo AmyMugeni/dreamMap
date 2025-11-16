@@ -76,7 +76,10 @@ fun DashboardScreen(
                     iconColor = PrimaryAccent,
                     title = "Explore Roadmaps",
                     description = "Discover structured paths to your career goals.",
-                    onClick = { navController.navigate(Screen.HomeGraph.Roadmaps.route) }
+                    onClick = {
+                        navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Roadmaps.route}")
+
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -86,7 +89,10 @@ fun DashboardScreen(
                     iconColor = SecondaryAccent,
                     title = "Find a Mentor",
                     description = "Connect with experts for personalized guidance.",
-                    onClick = { navController.navigate(Screen.HomeGraph.Mentors.route) }
+                    onClick = {
+                        navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Mentors.route}")
+
+                    }
                 )
             }
 
@@ -114,7 +120,7 @@ fun DashboardScreen(
                         contentAlignment = Alignment.CenterStart
                     ) {
                         // Placeholder for progress bar, latest task, or goal tracking info
-                        Text("You are currently following 1 roadmap.")
+                        Text("You are currently following 0 roadmap.")
                     }
                 }
             }

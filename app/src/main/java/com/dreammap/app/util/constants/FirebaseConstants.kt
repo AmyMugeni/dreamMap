@@ -7,7 +7,8 @@ object FirebaseConstants {
     const val USERS_COLLECTION = "users"
     const val ROADMAPS_COLLECTION = "roadmaps"
     const val BOOKINGS_COLLECTION = "bookings"
-    const val CHATS_COLLECTION = "chats" // Needed for the MVP chat feature
+    const val CHATS_COLLECTION = "chats"
+    const val MENTORS_COLLECTION = "mentors"
     const val MENTORSHIP_REQUESTS_COLLECTION = "mentorshipRequests" // Added for mentor management
     const val MENTEE_PROFILES_COLLECTION = "menteeProfiles" // Added for mentor management
 
@@ -23,7 +24,7 @@ object FirebaseConstants {
     const val FIELD_ROLE = "role"
     const val FIELD_INTERESTS = "interests"
     const val FIELD_EXPERTISE = "expertise"
-    const val FIELD_IS_AVAILABLE = "isAvailable" // Mentor filter
+    const val FIELD_IS_AVAILABLE = "available" // Mentor filter
 
 
     // --- 3. ROADMAPS Collection Field Names ---
