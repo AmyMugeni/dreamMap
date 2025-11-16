@@ -33,9 +33,9 @@ class AuthViewModel(
     val registrationSuccess: SharedFlow<Unit> = _registrationSuccess.receiveAsFlow()
         .shareIn(viewModelScope, started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed())
 
-    // 5. One-time event for successful login
-    private val _loginSuccess = Channel<Unit>(Channel.BUFFERED)
-    val loginSuccess: SharedFlow<Unit> = _loginSuccess.receiveAsFlow()
+    // 5. One-time event for successful login - NOW CARRIES THE USER
+    private val _loginSuccess = Channel<User>(Channel.BUFFERED)
+    val loginSuccess: SharedFlow<User> = _loginSuccess.receiveAsFlow()
         .shareIn(viewModelScope, started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed())
 
 
@@ -99,7 +99,7 @@ class AuthViewModel(
 
         result.onSuccess { user ->
             _currentUser.value = user
-            _loginSuccess.send(Unit) // EMIT EVENT
+            _loginSuccess.send(user) // EMIT EVENT WITH USER
         }.onFailure { e ->
             _errorMessage.value = e.message ?: "Login failed. Check credentials."
         }
