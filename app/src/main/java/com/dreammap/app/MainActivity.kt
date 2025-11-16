@@ -205,6 +205,24 @@ fun AppNavRoot(
             ProfileScreen(navController = navController, authViewModel = authViewModel)
         }
 
+        // Quiz Screen
+        composable("${Screen.HomeGraph.route}/${Screen.HomeGraph.Quiz.route}") {
+            QuizScreen(navController = navController)
+        }
+
+        // Quiz Results Screen
+        composable("${Screen.HomeGraph.route}/${Screen.HomeGraph.QuizResults.route}") {
+            val careerVm: com.dreammap.app.screens.career.CareerViewModel = viewModel(
+                factory = com.dreammap.app.screens.career.CareerViewModelFactory(roadmapRepository)
+            )
+            QuizResultsScreen(
+                navController = navController,
+                authViewModel = authViewModel,
+                userRepository = userRepository,
+                careerViewModel = careerVm
+            )
+        }
+
         // Chat with optional query param partnerId
         composable(
             route = "${Screen.HomeGraph.route}/chat?partnerId={partnerId}",
@@ -280,7 +298,12 @@ fun AppNavRoot(
         ) { backEntry ->
             val mentorUid = backEntry.arguments?.getString("mentorId") ?: ""
             val mentorProfileVm: MentorProfileViewModel = viewModel() // default constructor
-            MentorProfileEditScreen(mentorUid = mentorUid, viewModel = mentorProfileVm) {
+            MentorProfileEditScreen(
+                mentorUid = mentorUid,
+                viewModel = mentorProfileVm,
+                navController = navController,
+                authViewModel = authViewModel
+            ) {
                 navController.popBackStack()
             }
         }
