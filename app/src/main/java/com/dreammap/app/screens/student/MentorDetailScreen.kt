@@ -32,16 +32,20 @@ fun MentorDetailScreen(
     val currentUser by authViewModel.currentUser.collectAsState()
     val studentId = currentUser?.uid
 
-    // Fetch mentor details and mentorship status
+    // Fetch mentor details + mentorship status
     LaunchedEffect(mentorId, studentId) {
-        if (mentorId != null && studentId != null) {
+        if (mentorId != null) {
             mentorViewModel.fetchSelectedMentor(mentorId)
+        }
+        if (mentorId != null && studentId != null) {
             mentorViewModel.checkMentorshipStatus(studentId, mentorId)
         }
     }
+
     val selectedMentor by mentorViewModel.selectedMentor.collectAsState()
     val mentorshipStatus by mentorViewModel.mentorshipStatus.collectAsState()
     val isLoading by mentorViewModel.isLoading.collectAsState()
+
     val showRequestDialog = remember { mutableStateOf(false) }
 
     Scaffold(
@@ -56,12 +60,15 @@ fun MentorDetailScreen(
             )
         },
         floatingActionButton = {
-            selectedMentor?.let {
+            selectedMentor?.let { mentor ->
+
                 ActionButton(
                     status = mentorshipStatus,
                     onSendRequest = { showRequestDialog.value = true },
                     onStartChat = {
-                        navController.navigate(Screen.HomeGraph.Chat.createRoute(it.uid))
+                        navController.navigate(
+                            Screen.HomeGraph.Chat.createRoute(mentor.uid)
+                        )
                     }
                 )
             }
@@ -74,33 +81,28 @@ fun MentorDetailScreen(
                 .padding(paddingValues)
         ) {
             when {
-                selectedMentor == null && isLoading -> {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-                }
-                selectedMentor == null -> {
-                    Text(
-                        "Mentor not found.",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                else -> {
-                    selectedMentor?.let { mentor ->
-                        MentorProfileContent(mentor = mentor)
-                    }
-                }
+                isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+
+                selectedMentor == null -> Text(
+                    "Mentor not found",
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.error
+                )
+
+                else -> MentorProfileContent(mentor = selectedMentor!!)
             }
         }
     }
 
+    // ---- Mentorship Request Dialog ----
     if (showRequestDialog.value && selectedMentor != null && studentId != null) {
         MentorshipRequestDialog(
             mentorName = selectedMentor!!.name,
             onDismiss = { showRequestDialog.value = false },
-            onSend = { motivation: String, roadmap: String ->
+            onSend = { motivation, roadmap ->
                 mentorViewModel.sendMentorshipRequest(
                     studentId = studentId,
-                    studentName = currentUser?.name ?: "Unknown Student",
+                    studentName = currentUser?.name ?: "Unknown",
                     mentorId = selectedMentor!!.uid,
                     mentorName = selectedMentor!!.name,
                     motivationMessage = motivation,
@@ -205,6 +207,7 @@ fun MentorshipRequestDialog(
 }
 
 // ---------------- Mentor Profile Content ----------------
+
 @Composable
 fun MentorProfileContent(mentor: User) {
     Column(
@@ -214,6 +217,7 @@ fun MentorProfileContent(mentor: User) {
             .padding(16.dp)
             .padding(bottom = 80.dp)
     ) {
+        // Name and Role
         Text(
             text = mentor.name,
             style = MaterialTheme.typography.headlineLarge,
@@ -221,46 +225,52 @@ fun MentorProfileContent(mentor: User) {
             modifier = Modifier.padding(bottom = 4.dp)
         )
         Text(
-            text = mentor.role.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
+            text = mentor.role.replaceFirstChar { it.titlecase() },
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Expertise
         Text("Expertise:", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Text(
-            "Specializing in cloud architecture, ML deployment, and tech leadership.",
+            text = mentor.expertise.joinToString(", ").ifEmpty { "Not specified" },
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
         )
 
         HorizontalDivider()
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            "Roadmaps Available for Mentorship:",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+
+        // Roadmaps
+        Text("Roadmaps Available for Mentorship:", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Chip(label = "Cloud Engineering (AWS/GCP)")
-            Chip(label = "Data Science & MLOps")
-            Chip(label = "Technical Leadership")
+            mentor.roadmaps?.forEach { roadmap ->
+                Chip(label = roadmap)
+            }
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+        // Availability
+        Text("Typical Availability:", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Text(
-            "Typical Availability:",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 8.dp)
+            text = if (mentor.isAvailable) "Available" else "Not available",
+            style = MaterialTheme.typography.bodyMedium
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Bio
+        Text("Bio:", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Text(
-            "Tuesdays and Thursdays, 6:00 PM - 8:00 PM EST.",
+            text = mentor.bio ?: "Bio not available",
             style = MaterialTheme.typography.bodyMedium
         )
     }
 }
+
 
 @Composable
 fun Chip(label: String) {

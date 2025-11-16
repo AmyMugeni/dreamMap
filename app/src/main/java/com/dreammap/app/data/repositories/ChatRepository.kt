@@ -1,85 +1,91 @@
 package com.dreammap.app.data.repositories
 
 import com.dreammap.app.data.model.Message
-import com.dreammap.app.util.constants.FirebaseConstants
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import kotlinx.coroutines.flow.Flow
-import com.google.firebase.Timestamp
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-class ChatRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-) {
-    private val chatsCollection = firestore.collection(FirebaseConstants.CHATS_COLLECTION)
+// Using a hardcoded path for demonstration. In a real app, this would be dynamic based on the chat ID.
+private const val CHAT_PATH = "chats/chat_mentor_mentee_001/messages"
 
-    // Helper function to generate a consistent chat ID between two users
-    private fun getChatId(user1Id: String, user2Id: String): String {
-        // Sort IDs alphabetically to ensure the ID is always the same regardless of who starts the chat
-        return if (user1Id < user2Id) "${user1Id}_${user2Id}" else "${user2Id}_${user1Id}"
-    }
+class ChatRepository(private val firestore: FirebaseFirestore) {
 
     /**
-     * Creates a new chat thread document if one doesn't exist.
-     * @param user1Id Student UID.
-     * @param user2Id Mentor UID.
+     * Provides a real-time stream of messages from Firestore using callbackFlow.
+     * Messages are ordered by timestamp ascending.
      */
-    suspend fun createChat(user1Id: String, user2Id: String) {
-        val chatId = getChatId(user1Id, user2Id)
-        val chatRef = chatsCollection.document(chatId)
+    fun getMessages(): Flow<List<Message>> = callbackFlow {
+        // Query the messages collection, ordered by timestamp
+        val messagesQuery = firestore.collection(CHAT_PATH)
+            .orderBy("timestamp", Query.Direction.ASCENDING)
 
-        // Use a transaction or check if the document exists before setting to avoid overwriting
-        val chatExists = chatRef.get().await().exists()
+        // Set up the real-time listener (onSnapshot)
+        val subscription = messagesQuery.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                // Handle the error (e.g., permission denied, connection loss)
+                trySend(emptyList())
+                close(e)
+                return@addSnapshotListener
+            }
 
-        if (!chatExists) {
-            chatRef.set(mapOf(
-                "participants" to listOf(user1Id, user2Id),
-                "createdAt" to Timestamp.now()
-            )).await()
+            if (snapshot != null) {
+                // Map Firestore documents to Message data class
+                val messages = snapshot.documents.mapNotNull { document ->
+                    try {
+                        // toObject automatically handles the Timestamp conversion
+                        document.toObject(Message::class.java)?.copy(id = document.id)
+                    } catch (e: Exception) {
+                        // Log error if message mapping fails
+                        null
+                    }
+                }
+                // Send the new list of messages to the Flow
+                trySend(messages)
+            }
+        }
+
+        // Suspend until the coroutine is cancelled, then remove the listener
+        awaitClose {
+            subscription.remove()
         }
     }
 
     /**
-     * Sends a new message to a specific chat.
+     * Sends a new message to Firestore.
      */
-    suspend fun sendMessage(senderId: String, recipientId: String, text: String) {
-        val chatId = getChatId(senderId, recipientId)
-        val message = Message(
+    suspend fun sendMessage(
+        senderId: String,
+        text: String
+    ) {
+        val newMessage = Message(
             senderId = senderId,
             text = text,
             timestamp = Timestamp.now()
         )
-
-        // Writes the message to the 'messages' sub-collection
-        chatsCollection.document(chatId)
-            .collection(FirebaseConstants.MESSAGES_SUBCOLLECTION)
-            .add(message).await()
+        // Add the new document to the collection. Firestore will auto-generate the document ID.
+        firestore.collection(CHAT_PATH).add(newMessage).await()
     }
 
     /**
-     * Sets up a real-time listener for messages in a chat.
-     * This uses Kotlin Flow to stream updates to the UI layer.
+     * Initializes the chat with a couple of messages if the collection is currently empty.
      */
-    fun getMessagesForChat(user1Id: String, user2Id: String): Flow<List<Message>> = callbackFlow {
-        val chatId = getChatId(user1Id, user2Id)
+    suspend fun initializeChatDataIfNeeded() {
+        val collection = firestore.collection(CHAT_PATH)
+        // Check if the collection has any documents
+        val initialDocs = collection.limit(1).get().await()
 
-        val registration = chatsCollection.document(chatId)
-            .collection(FirebaseConstants.MESSAGES_SUBCOLLECTION)
-            .orderBy("timestamp", Query.Direction.ASCENDING) // Order chronologically
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    close(e) // Close the flow on error
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null) {
-                    val messages = snapshot.toObjects(Message::class.java)
-                    trySend(messages) // Emit the new list of messages
-                }
+        if (initialDocs.isEmpty) {
+            val initialMessages = listOf(
+                Message(senderId = "mentee_001", text = "Hi Mentor! I'm ready for the next session.", timestamp = Timestamp(System.currentTimeMillis() / 1000 - 3600, 0)),
+                Message(senderId = "mentor_123", text = "Perfect! Let's review your 'State' homework.", timestamp = Timestamp(System.currentTimeMillis() / 1000 - 1800, 0))
+            )
+            initialMessages.forEach { msg ->
+                collection.add(msg).await()
             }
-        // When the flow is closed, remove the listener
-        awaitClose { registration.remove() }
+        }
     }
 }

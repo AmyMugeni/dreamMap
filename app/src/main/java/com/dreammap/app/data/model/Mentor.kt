@@ -11,7 +11,7 @@ data class Mentor(
 
 // Example data for the screen
 val sampleMentors = listOf(
-    Mentor("m1", "Dr. Alex Chen", "Frontend Dev & UX", "10+ years experience building scalable web apps.", 4.8, listOf("1")),
-    Mentor("m2", "Sarah Jones", "Business & Strategy", "Agile coach and former startup founder.", 4.9, listOf("2")),
-    Mentor("m3", "Markus Schmidt", "Data Science/ML", "Specializes in Python and neural networks.", 4.5, listOf("3")),
+    Mentor("m1", "Dr. Alex Njoroge", "Frontend Dev & UX", "10+ years experience building scalable web apps.", 4.8, listOf("1")),
+    Mentor("m2", "Jon Snow", "Business & Strategy", "Agile coach and former startup founder.", 4.9, listOf("2")),
+    Mentor("m3", "Markus Aurelius", "Data Science/ML", "Specializes in Python and neural networks.", 4.5, listOf("3")),
 )
