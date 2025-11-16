@@ -19,9 +19,11 @@ import com.dreammap.app.screens.auth.AuthViewModel
 import com.dreammap.app.screens.auth.LoginScreen
 import com.dreammap.app.screens.auth.RoleSelectionScreen
 import com.dreammap.app.screens.auth.SignUpScreen
+import com.dreammap.app.screens.admin.*
 import com.dreammap.app.screens.mentor.*
 import com.dreammap.app.screens.student.*
 import com.dreammap.app.ui.theme.DreamMapTheme
+import com.dreammap.app.util.constants.FirebaseConstants
 import com.dreammap.app.viewmodels.*
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -91,6 +93,7 @@ fun AppNavRoot(
     val mentorVmFactory = MentorViewModelFactory(userRepository, bookingRepository, mentorshipRepository)
     val mentorDirectoryVmFactory = MentorDirectoryViewModelFactory(userRepository)
     val roadmapVmFactory = RoadmapViewModelFactory(roadmapRepository)
+    val adminVmFactory = AdminViewModelFactory(userRepository)
     val mentorProfileVm: MentorProfileViewModel = viewModel()
 
 
@@ -284,24 +287,54 @@ fun AppNavRoot(
             }
         }
 
-        // --- ADMIN ---
-        composable(Screen.AdminDashboard.route) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Admin Dashboard (placeholder)")
-            }
+        // ---- ADMIN FLOW ----
+        // Admin Dashboard
+        composable("${Screen.AdminGraph.route}/${Screen.AdminGraph.Dashboard.route}") {
+            val adminVm: AdminViewModel = viewModel(factory = adminVmFactory)
+            AdminDashboardScreen(navController = navController, adminViewModel = adminVm)
+        }
+
+        // Manage Students
+        composable("${Screen.AdminGraph.route}/${Screen.AdminGraph.ManageStudents.route}") {
+            val adminVm: AdminViewModel = viewModel(factory = adminVmFactory)
+            ManageStudentsScreen(navController = navController, adminViewModel = adminVm)
+        }
+
+        // Manage Mentors
+        composable("${Screen.AdminGraph.route}/${Screen.AdminGraph.ManageMentors.route}") {
+            val adminVm: AdminViewModel = viewModel(factory = adminVmFactory)
+            ManageMentorsScreen(navController = navController, adminViewModel = adminVm)
+        }
+
+        // User Detail
+        composable(
+            route = "${Screen.AdminGraph.route}/${Screen.AdminGraph.UserDetail.route}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backEntry ->
+            val userId = backEntry.arguments?.getString("userId") ?: ""
+            val adminVm: AdminViewModel = viewModel(factory = adminVmFactory)
+            UserDetailScreen(navController = navController, userId = userId, adminViewModel = adminVm)
         }
     }
     // observe auth state to redirect immediately after successful login/signup
     LaunchedEffect(currentUser) {
         if (currentUser != null && !didAutoNavigateForAuth) {
             didAutoNavigateForAuth = true
-            if (currentUser?.role == "mentor") {
-                navController.navigate(Screen.MentorGraph.createRoute(currentUser!!.uid, currentUser!!.name)) {
-                    popUpTo(Screen.AuthGraph.route) { inclusive = true }
+            when (currentUser?.role) {
+                FirebaseConstants.ROLE_MENTOR -> {
+                    navController.navigate(Screen.MentorGraph.createRoute(currentUser!!.uid, currentUser!!.name)) {
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    }
                 }
-            } else {
-                navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
-                    popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                FirebaseConstants.ROLE_ADMIN -> {
+                    navController.navigate("${Screen.AdminGraph.route}/${Screen.AdminGraph.Dashboard.route}") {
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    }
+                }
+                else -> {
+                    navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
+                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    }
                 }
             }
         }
