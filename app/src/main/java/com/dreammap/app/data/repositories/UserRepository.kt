@@ -78,4 +78,53 @@ class UserRepository(
         }
     }
 
+    /**
+     * Admin: Retrieves all users of a specific role.
+     */
+    suspend fun getUsersByRole(role: String): List<User> {
+        return try {
+            println("DEBUG: Fetching users with role: $role")
+            val snapshot = usersCollection
+                .whereEqualTo(FirebaseConstants.FIELD_ROLE, role)
+                .get().await()
+
+            val users = snapshot.toObjects(User::class.java)
+            println("DEBUG: Found ${users.size} users with role $role.")
+            users
+        } catch (e: Exception) {
+            println("ERROR: Failed to fetch users with role $role. Error: ${e.message}")
+            emptyList()
+        }
+    }
+
+    /**
+     * Admin: Retrieves all users in the system.
+     */
+    suspend fun getAllUsers(): List<User> {
+        return try {
+            println("DEBUG: Fetching all users...")
+            val snapshot = usersCollection.get().await()
+            val users = snapshot.toObjects(User::class.java)
+            println("DEBUG: Found ${users.size} total users.")
+            users
+        } catch (e: Exception) {
+            println("ERROR: Failed to fetch all users. Error: ${e.message}")
+            emptyList()
+        }
+    }
+
+    /**
+     * Admin: Updates any user's profile.
+     */
+    suspend fun updateUserProfile(uid: String, updates: Map<String, Any>) {
+        try {
+            println("DEBUG: Attempting to update user profile for UID=$uid with $updates")
+            usersCollection.document(uid).update(updates).await()
+            println("DEBUG: User profile update successful for UID=$uid")
+        } catch (e: Exception) {
+            println("ERROR: User profile update failed for UID=$uid. Error=${e.message}")
+            throw e
+        }
+    }
+
 }
