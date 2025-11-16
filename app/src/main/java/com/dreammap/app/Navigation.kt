@@ -62,6 +62,13 @@ sealed class Screen(val route: String) {
     }
 
 
-    // 5. Admin Flow
-    object AdminDashboard : Screen("admin_dashboard")
+    // 5. Admin App Flow (The Admin Graph)
+    object AdminGraph : Screen("admin_graph") {
+        object Dashboard : Screen("dashboard")
+        object ManageStudents : Screen("manage_students")
+        object ManageMentors : Screen("manage_mentors")
+        object UserDetail : Screen("user_detail/{userId}") {
+            fun createRoute(userId: String) = "user_detail/$userId"
+        }
+    }
 }
