@@ -143,4 +143,22 @@ class UserRepository(
         }
     }
 
+    /**
+     * Updates a student's quiz completion status and interests.
+     */
+    suspend fun updateQuizResults(uid: String, interests: List<String>) {
+        try {
+            println("DEBUG: Updating quiz results for UID=$uid with interests: $interests")
+            val updates = mapOf(
+                FirebaseConstants.FIELD_INTERESTS to interests,
+                "quizCompleted" to true
+            )
+            usersCollection.document(uid).update(updates).await()
+            println("DEBUG: Quiz results successfully updated for UID=$uid")
+        } catch (e: Exception) {
+            println("ERROR: Failed to update quiz results for UID=$uid. Error=${e.message}")
+            throw e
+        }
+    }
+
 }
