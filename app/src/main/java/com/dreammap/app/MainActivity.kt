@@ -147,6 +147,15 @@ fun AppNavRoot(
             SignUpScreen(navController = navController, authViewModel = authViewModel, role = role)
         }
 
+        // Career Interest Quiz
+        composable(Screen.AuthGraph.CareerQuiz.route) {
+            com.dreammap.app.screens.student.CareerInterestQuizScreen(
+                navController = navController,
+                authViewModel = authViewModel,
+                userRepository = userRepository
+            )
+        }
+
         // ---- STUDENT FLOW (prefixed by home_graph) ----
 
         // Dashboard
@@ -366,8 +375,15 @@ fun AppNavRoot(
                     }
                 }
                 else -> {
-                    navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
-                        popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                    // For students, check if they've completed the quiz
+                    if (currentUser?.quizCompleted == false) {
+                        navController.navigate(Screen.AuthGraph.CareerQuiz.route) {
+                            popUpTo(Screen.AuthGraph.route) { inclusive = false }
+                        }
+                    } else {
+                        navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
+                            popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                        }
                     }
                 }
             }
