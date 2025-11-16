@@ -43,13 +43,27 @@ fun MenteeDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(menteeState?.name ?: "Loading Mentee...") },
+                title = { 
+                    Text(
+                        menteeState?.name ?: "Loading Mentee...",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    ) 
+                },
                 navigationIcon = {
-//                    IconButton(onClick = onNavigateBack)
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Go back")
+                        Icon(
+                            Icons.Filled.ArrowBack, 
+                            contentDescription = "Go back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
