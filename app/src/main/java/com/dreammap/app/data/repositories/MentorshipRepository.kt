@@ -35,15 +35,13 @@ class MentorshipRepositoryImpl(
 
     // Firestore path for mentorship requests (Public Data)
     private fun getRequestsCollection() =
-        firestore.collection("artifacts").document(appId)
-            .collection("public").document("data")
-            .collection("mentorship_requests")
+        firestore.collection("mentorship_requests")
+
 
     // Firestore path for user profiles (for updating the student's mentor ID)
     private fun getUsersCollection() =
-        firestore.collection("artifacts").document(appId)
-            .collection("public").document("data")
-            .collection("users")
+        firestore.collection("users")
+
 
     /**
      * Retrieves a real-time stream of pending requests for a specific mentor.

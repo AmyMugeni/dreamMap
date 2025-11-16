@@ -21,6 +21,7 @@ sealed class Screen(val route: String) {
         object Login : Screen("login")
     }
 
+
     // 3. Main App Flow (The Home Graph - Student Role)
     object HomeGraph : Screen("home_graph") {
         // Primary nested destinations (e.g., Tabs)
@@ -33,6 +34,7 @@ sealed class Screen(val route: String) {
         object RoadmapDetail : Screen("roadmap_detail/{roadmapId}") {
             fun createRoute(roadmapId: String) = "roadmap_detail/$roadmapId"
         }
+
         object MentorDetail : Screen("mentor_detail/{mentorId}") {
             fun createRoute(mentorId: String) = "mentor_detail/$mentorId"
         }
@@ -43,15 +45,22 @@ sealed class Screen(val route: String) {
     }
 
     // 4. Mentor App Flow (The Mentor Graph)
-    object MentorGraph : Screen("mentor_graph") {
+    object MentorGraph : Screen("mentor_graph/{userId}/{userName}") {
+        fun createRoute(userId: String, userName: String) = "mentor_graph/$userId/$userName"
+        const val KEY_USER_ID = "userId"
+        const val KEY_USER_NAME = "userName"
+
         object Dashboard : Screen("mentor_dashboard")
         object ManageMentees : Screen("manage_mentees")
         object MentorRequests : Screen("mentor_requests")
-        // CRITICAL: Mentee Detail is required for the flow we built!
+        object ProfileEdit : Screen("profile/mentorEdit/{mentorId}") {
+            fun createRoute(mentorId: String) = "profile/mentorEdit/$mentorId"
+        }
         object MenteeDetail : Screen("mentee_detail/{menteeId}") {
             fun createRoute(menteeId: String) = "mentee_detail/$menteeId"
         }
     }
+
 
     // 5. Admin Flow
     object AdminDashboard : Screen("admin_dashboard")

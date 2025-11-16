@@ -9,15 +9,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.dreammap.app.viewmodels.AuthViewModelFactory
+import com.dreammap.app.data.repositories.AuthRepository
 import androidx.navigation.NavHostController
-import com.dreammap.app.Screen // Import your navigation routes
+import com.dreammap.app.Screen
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     navController: NavHostController,
-    authViewModel: AuthViewModel
+    authRepository: AuthRepository
 ) {
+    val authViewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(authRepository)
+    )
     // Input States
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -30,12 +37,17 @@ fun LoginScreen(
 
     // 1. Navigate on successful login using a one-time event
     LaunchedEffect(Unit) {
-        authViewModel.loginSuccess.collect {
-            // Success! AuthViewModel already determined the user's role.
-            navController.navigate(Screen.HomeGraph.route) {
-                // Clear the entire navigation stack up to the root
+        authViewModel.loginSuccess.collect { user ->
+            // THE FIX: Check the user's role to determine the navigation route
+            val route = if (user.role == "mentor") {
+                Screen.MentorGraph.createRoute(user.uid, user.name)
+            } else {
+                Screen.HomeGraph.route
+            }
+            navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
                 popUpTo(Screen.AuthGraph.route) { inclusive = true }
             }
+
         }
     }
 

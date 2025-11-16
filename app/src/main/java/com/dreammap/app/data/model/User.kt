@@ -12,7 +12,7 @@ data class User(
     // @DocumentId ensures this field is automatically populated with the Firestore document's ID (which is the Firebase Auth UID)
     @DocumentId
     val uid: String = "",
-    val role: String = "student", // Used to determine UI and access (e.g., "student", "mentor", "admin")
+    val role: String = "", // Used to determine UI and access (e.g., "student", "mentor", "admin")
     val email: String = "",
     val name: String = "",
     val profileImageUrl: String? = null,
@@ -23,7 +23,19 @@ data class User(
     val interests: List<String> = emptyList(), // For personalized career recommendations
 
     // MENTOR FIELDS
-    val expertise: List<String> = emptyList(), // e.g., ["Software Engineering", "UX Design"]
+    val expertise: List<String> = emptyList(),
+    val roadmaps: List<String> = emptyList(), // e.g., ["Software Engineering", "UX Design"]
     val bio: String? = null,
     val isAvailable: Boolean = true // Used for filtering available mentors
 )
+
+object ChatUsers {
+    // These IDs should match the security rules you'd use in Firestore
+    const val MENTOR_ID = "mentor_123"
+    const val MENTEE_ID = "mentee_001"
+}
+
+// Enum to easily switch the app's current user perspective for testing
+enum class CurrentUserRole {
+    MENTOR, MENTEE
+}

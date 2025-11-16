@@ -26,7 +26,13 @@ fun MenteeDetailScreen(
     navController: NavHostController,
     menteeId: String,
     mentorViewModel: MentorViewModel
-) {
+)
+//fun MenteeDetailScreen(
+//    menteeId: String,
+//    onNavigateBack: () -> Unit, // Changed to a callback function for better decoupling
+//    mentorViewModel: MentorViewModel
+//)
+{
     // Collect the mentee state from ViewModel
     val menteeState: MenteeProfile? by mentorViewModel.getMenteeById(menteeId)
         .collectAsState(initial = null)
@@ -39,6 +45,7 @@ fun MenteeDetailScreen(
             TopAppBar(
                 title = { Text(menteeState?.name ?: "Loading Mentee...") },
                 navigationIcon = {
+//                    IconButton(onClick = onNavigateBack)
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Go back")
                     }
