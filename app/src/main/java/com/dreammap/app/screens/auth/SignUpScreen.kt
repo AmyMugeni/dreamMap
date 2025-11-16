@@ -43,9 +43,17 @@ fun SignUpScreen(
     // 1. Navigate on successful sign-up (Event-driven)
     LaunchedEffect(Unit) {
         authViewModel.registrationSuccess.collect {
-            navController.navigate(Screen.HomeGraph.route) {
-                // Clear the Auth stack
-                popUpTo(Screen.AuthGraph.route) { inclusive = true }
+            // For students, navigate to career quiz first
+            if (role == "student") {
+                navController.navigate(Screen.AuthGraph.CareerQuiz.route) {
+                    // Clear the Auth stack but keep quiz accessible
+                    popUpTo(Screen.AuthGraph.route) { inclusive = false }
+                }
+            } else {
+                // For mentors and admins, go directly to their respective dashboards
+                navController.navigate(Screen.HomeGraph.route) {
+                    popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                }
             }
         }
     }
