@@ -19,6 +19,7 @@ import com.dreammap.app.screens.auth.AuthViewModel
 import com.dreammap.app.screens.auth.LoginScreen
 import com.dreammap.app.screens.auth.RoleSelectionScreen
 import com.dreammap.app.screens.auth.SignUpScreen
+import com.dreammap.app.screens.auth.SplashScreen
 import com.dreammap.app.screens.admin.*
 import com.dreammap.app.screens.mentor.*
 import com.dreammap.app.screens.student.*
@@ -118,16 +119,10 @@ fun AppNavRoot(
     ) {
         // ---- SPLASH ----
         composable(Screen.Splash.route) {
-            // Simple splash: always go to role selection for debugging (Option B)
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            // Navigate to role selection immediately for debugging
-            LaunchedEffect(Unit) {
-                navController.navigate(Screen.AuthGraph.RoleSelection.route) {
-                    popUpTo(Screen.Splash.route) { inclusive = true }
-                }
-            }
+            SplashScreen(
+                navController = navController,
+                authViewModel = authViewModel
+            )
         }
 
         // ---- AUTH FLOW ----
@@ -163,13 +158,11 @@ fun AppNavRoot(
         composable("${Screen.HomeGraph.route}/${Screen.HomeGraph.Mentors.route}") {
             val mentorDirVM: MentorDirectoryViewModel = viewModel(factory = mentorDirectoryVmFactory)
             MentorsScreen(
+                navController = navController,
                 viewModel = mentorDirVM,
                 onMentorClick = { mentorId ->
                     // navigate to mentor detail full path: home_graph/mentor_detail/{mentorId}
                     navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.MentorDetail.createRoute(mentorId)}")
-                },
-                onBackClick = {
-                    navController.popBackStack()
                 }
             )
         }
@@ -205,6 +198,11 @@ fun AppNavRoot(
             val roadmapId = backEntry.arguments?.getString("roadmapId") ?: ""
             val roadmapVm: RoadmapViewModel = viewModel(factory = roadmapVmFactory)
             RoadmapDetailScreen(navController = navController, roadmapId = roadmapId, roadmapViewModel = roadmapVm)
+        }
+
+        // Profile Screen
+        composable("${Screen.HomeGraph.route}/${Screen.HomeGraph.Profile.route}") {
+            ProfileScreen(navController = navController, authViewModel = authViewModel)
         }
 
         // Chat with optional query param partnerId
