@@ -152,7 +152,8 @@ fun AppNavRoot(
             com.dreammap.app.screens.student.CareerInterestQuizScreen(
                 navController = navController,
                 authViewModel = authViewModel,
-                userRepository = userRepository
+                userRepository = userRepository,
+                roadmapRepository = roadmapRepository
             )
         }
 
