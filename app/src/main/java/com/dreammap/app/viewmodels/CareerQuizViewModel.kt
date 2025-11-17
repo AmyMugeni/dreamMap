@@ -2,13 +2,16 @@ package com.dreammap.app.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dreammap.app.data.model.Roadmap
+import com.dreammap.app.data.repositories.RoadmapRepository
 import com.dreammap.app.data.repositories.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class CareerQuizViewModel(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val roadmapRepository: RoadmapRepository
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -20,19 +23,32 @@ class CareerQuizViewModel(
     private val _quizCompleted = MutableStateFlow(false)
     val quizCompleted: StateFlow<Boolean> = _quizCompleted
 
+    private val _detectedInterests = MutableStateFlow<List<String>>(emptyList())
+    val detectedInterests: StateFlow<List<String>> = _detectedInterests
+
+    private val _recommendedRoadmaps = MutableStateFlow<List<Roadmap>>(emptyList())
+    val recommendedRoadmaps: StateFlow<List<Roadmap>> = _recommendedRoadmaps
+
     /**
-     * Saves quiz results to the user's profile
+     * Saves quiz results to the user's profile and fetches recommended roadmaps
      */
     fun saveQuizResults(userId: String, interests: List<String>) = viewModelScope.launch {
         _isLoading.value = true
         _errorMessage.value = null
+        _detectedInterests.value = interests
 
         try {
+            // Save interests to user profile
             val updates = mapOf(
                 "quizCompleted" to true,
                 "interests" to interests
             )
             userRepository.updateUserProfile(userId, updates)
+
+            // Fetch recommended roadmaps based on interests
+            val roadmaps = roadmapRepository.getRoadmapsByInterest(interests)
+            _recommendedRoadmaps.value = roadmaps
+
             _quizCompleted.value = true
         } catch (e: Exception) {
             _errorMessage.value = "Failed to save quiz results: ${e.message}"
