@@ -131,9 +131,6 @@ fun CareerInterestQuizScreen(
                         navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
                             popUpTo(Screen.AuthGraph.route) { inclusive = true }
                         }
-                    },
-                    onRoadmapClick = { roadmapId ->
-                        navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.RoadmapDetail.createRoute(roadmapId)}")
                     }
                 )
             } else {
@@ -272,7 +269,7 @@ fun QuizResultsScreen(
     detectedInterests: List<String>,
     recommendedRoadmaps: List<com.dreammap.app.data.model.Roadmap>,
     onContinue: () -> Unit,
-    onRoadmapClick: (String) -> Unit
+    onRoadmapClick: (String) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -357,101 +354,6 @@ fun QuizResultsScreen(
             }
         }
 
-        // Recommended Roadmaps Section
-        if (recommendedRoadmaps.isNotEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Recommended Roadmaps",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Text(
-                    text = "We found ${recommendedRoadmaps.size} roadmap(s) that match your interests:",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                recommendedRoadmaps.forEach { roadmap ->
-                    ElevatedCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onRoadmapClick(roadmap.id) },
-                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = roadmap.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            if (roadmap.shortDescription.isNotEmpty()) {
-                                Text(
-                                    text = roadmap.shortDescription,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (roadmap.weeklyTimeCommitment.isNotEmpty()) {
-                                    Text(
-                                        text = "⏱ ${roadmap.weeklyTimeCommitment}/week",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowForward,
-                                    contentDescription = "View roadmap",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "No roadmaps found",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "We couldn't find roadmaps matching your interests right now. Check back later!",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // Continue Button
@@ -462,7 +364,7 @@ fun QuizResultsScreen(
                 .height(56.dp)
         ) {
             Text(
-                text = "Continue to Dashboard",
+                text = "Explain Roadmaps",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
