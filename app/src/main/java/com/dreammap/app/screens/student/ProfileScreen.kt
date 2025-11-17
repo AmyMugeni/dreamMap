@@ -286,22 +286,6 @@ fun ProfileScreen(
 
                 // Profile Options
                 ProfileOptionCard(
-                    icon = Icons.Filled.Settings,
-                    title = "Settings",
-                    onClick = { /* TODO: Navigate to settings */ }
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                ProfileOptionCard(
-                    icon = Icons.Filled.Info,
-                    title = "About",
-                    onClick = { /* TODO: Navigate to about */ }
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                ProfileOptionCard(
                     icon = Icons.Filled.ExitToApp,
                     title = "Logout",
                     onClick = {
