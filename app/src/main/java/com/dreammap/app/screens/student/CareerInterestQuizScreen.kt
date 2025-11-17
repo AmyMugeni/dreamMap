@@ -1,9 +1,15 @@
 package com.dreammap.app.screens.student
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.layout.ExperimentalLayoutApi
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,13 +29,17 @@ import com.dreammap.app.viewmodels.CareerQuizViewModelFactory
 fun CareerInterestQuizScreen(
     navController: NavHostController,
     authViewModel: AuthViewModel,
-    userRepository: com.dreammap.app.data.repositories.UserRepository
+    userRepository: com.dreammap.app.data.repositories.UserRepository,
+    roadmapRepository: com.dreammap.app.data.repositories.RoadmapRepository
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
     val userId = currentUser?.uid ?: return
 
-    val quizViewModelFactory = CareerQuizViewModelFactory(userRepository)
+    val quizViewModelFactory = CareerQuizViewModelFactory(userRepository, roadmapRepository)
     val quizViewModel: CareerQuizViewModel = viewModel(factory = quizViewModelFactory)
+
+    val detectedInterests by quizViewModel.detectedInterests.collectAsState()
+    val recommendedRoadmaps by quizViewModel.recommendedRoadmaps.collectAsState()
 
     val isLoading by quizViewModel.isLoading.collectAsState()
     val errorMessage by quizViewModel.errorMessage.collectAsState()
@@ -85,12 +95,12 @@ fun CareerInterestQuizScreen(
         )
     }
 
-    // Navigate to home when quiz is completed
+    // Show results when quiz is completed
+    var showResults by remember { mutableStateOf(false) }
+    
     LaunchedEffect(quizCompleted) {
-        if (quizCompleted) {
-            navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
-                popUpTo(Screen.AuthGraph.route) { inclusive = true }
-            }
+        if (quizCompleted && !showResults) {
+            showResults = true
         }
     }
 
@@ -113,6 +123,20 @@ fun CareerInterestQuizScreen(
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
+                )
+            } else if (showResults) {
+                // Results Screen
+                QuizResultsScreen(
+                    detectedInterests = detectedInterests,
+                    recommendedRoadmaps = recommendedRoadmaps,
+                    onContinue = {
+                        navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.Dashboard.route}") {
+                            popUpTo(Screen.AuthGraph.route) { inclusive = true }
+                        }
+                    },
+                    onRoadmapClick = { roadmapId ->
+                        navController.navigate("${Screen.HomeGraph.route}/${Screen.HomeGraph.RoadmapDetail.createRoute(roadmapId)}")
+                    }
                 )
             } else {
                 Column(
@@ -240,6 +264,210 @@ fun CareerInterestQuizScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun QuizResultsScreen(
+    detectedInterests: List<String>,
+    recommendedRoadmaps: List<com.dreammap.app.data.model.Roadmap>,
+    onContinue: () -> Unit,
+    onRoadmapClick: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        // Success Icon
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            modifier = Modifier.size(80.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            text = "Quiz Completed!",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = "Based on your answers, we've identified your career interests and found matching roadmaps for you.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Suggested Careers Section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Suggested Career Interests",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    text = "Based on your quiz answers, you might be interested in:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Interest chips
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    detectedInterests.forEach { interest ->
+                        AssistChip(
+                            onClick = { },
+                            enabled = false,
+                            label = {
+                                Text(
+                                    interest,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                labelColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        // Recommended Roadmaps Section
+        if (recommendedRoadmaps.isNotEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Recommended Roadmaps",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "We found ${recommendedRoadmaps.size} roadmap(s) that match your interests:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                recommendedRoadmaps.forEach { roadmap ->
+                    ElevatedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onRoadmapClick(roadmap.id) },
+                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = roadmap.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            if (roadmap.shortDescription.isNotEmpty()) {
+                                Text(
+                                    text = roadmap.shortDescription,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (roadmap.weeklyTimeCommitment.isNotEmpty()) {
+                                    Text(
+                                        text = "⏱ ${roadmap.weeklyTimeCommitment}/week",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowForward,
+                                    contentDescription = "View roadmap",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "No roadmaps found",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "We couldn't find roadmaps matching your interests right now. Check back later!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Continue Button
+        Button(
+            onClick = onContinue,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            Text(
+                text = "Continue to Dashboard",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
