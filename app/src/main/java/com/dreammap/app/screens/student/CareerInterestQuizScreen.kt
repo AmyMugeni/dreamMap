@@ -364,7 +364,7 @@ fun QuizResultsScreen(
                 .height(56.dp)
         ) {
             Text(
-                text = "Explain Roadmaps",
+                text = "Explore Roadmaps",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
