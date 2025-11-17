@@ -38,12 +38,44 @@ fun AdminProfileScreen(
     val currentUser by authViewModel.currentUser.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
     var isEditMode by remember { mutableStateOf(false) }
+    var isLoadingProfile by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
     // Editable fields
     var editedName by remember { mutableStateOf("") }
     var editedBio by remember { mutableStateOf("") }
+    
+    // Fetch user profile from database when screen loads
+    LaunchedEffect(Unit) {
+        val authUser = authViewModel.currentUser.value
+        if (authUser == null && userRepository != null) {
+            isLoadingProfile = true
+            scope.launch {
+                try {
+                    // Get current Firebase Auth user
+                    val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                    if (firebaseUser != null) {
+                        // Fetch user from database
+                        val user = userRepository.getUser(firebaseUser.uid)
+                        if (user != null) {
+                            // Update AuthViewModel with fetched user
+                            authViewModel.refreshCurrentUser()
+                        } else {
+                            snackbarHostState.showSnackbar("Failed to load profile data")
+                        }
+                    }
+                } catch (e: Exception) {
+                    snackbarHostState.showSnackbar("Error loading profile: ${e.message}")
+                } finally {
+                    isLoadingProfile = false
+                }
+            }
+        } else if (authUser != null) {
+            // Refresh to get latest data from database
+            authViewModel.refreshCurrentUser()
+        }
+    }
     
     // Initialize edit fields when user data is available
     LaunchedEffect(currentUser) {
@@ -82,18 +114,41 @@ fun AdminProfileScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        if (currentUser == null) {
+        if (isLoadingProfile) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "No user data available",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.error
-                )
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        } else if (currentUser == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "No user data available",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                authViewModel.refreshCurrentUser()
+                            }
+                        }
+                    ) {
+                        Text("Retry")
+                    }
+                }
             }
         } else {
             val user = currentUser!!
