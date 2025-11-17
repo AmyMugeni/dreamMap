@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -193,6 +193,49 @@ fun RoadmapListItem(
                             color = MediumPurple,
                             trackColor = LightPurple.copy(alpha = 0.3f)
                         )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                // Events and Resources info
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (roadmap.events.isNotEmpty()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Event,
+                                contentDescription = "Events",
+                                tint = MediumPurple,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "${roadmap.events.size} event${if (roadmap.events.size != 1) "s" else ""}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MediumPurple
+                            )
+                        }
+                    }
+                    if (roadmap.resources.isNotEmpty()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MenuBook,
+                                contentDescription = "Resources",
+                                tint = MediumPurple,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "${roadmap.resources.size} resource${if (roadmap.resources.size != 1) "s" else ""}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MediumPurple
+                            )
+                        }
                     }
                 }
             }
